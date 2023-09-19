@@ -1,7 +1,15 @@
 import { authMiddleware } from "@clerk/nextjs"
-
-export default authMiddleware({})
+import { NextResponse } from "next/server"
 
 export const config = {
-  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
+
+export default authMiddleware({
+  afterAuth(auth, req, evt) {
+    if (req.nextUrl.pathname.startsWith('/api') && !auth.userId && !auth.isPublicRoute) {
+      return new NextResponse(null, { status: 401 })
+    }
+  },
+  publicRoutes: []
+})

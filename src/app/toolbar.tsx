@@ -5,13 +5,14 @@ import { MessageSquare, Bot, FileText, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useEffect, useState } from 'react'
 
 interface Tab {
   title: string,
@@ -41,7 +42,14 @@ export default function Toolbar() {
   const { isSignedIn } = useAuth()
   const currentPath = usePathname()
 
-  const currentTab = tabs.find(t => currentPath.startsWith(t.href)) as Tab
+  const [currentTab, setCurrentTab] = useState<Tab>()
+
+  useEffect(() =>
+    setCurrentTab(tabs.find(t => currentPath.startsWith(t.href))),
+    [currentPath]
+  )
+
+  // const currentTab = tabs.find(t => currentPath.startsWith(t.href)) as Tab
 
   if (!isSignedIn) {
     return <></>
@@ -66,11 +74,11 @@ export default function Toolbar() {
         <div className='sm:hidden'>
           <DropdownMenu>
             <DropdownMenuTrigger>
-              <Button asChild variant='outline'>
-                <Link href={currentTab.href} className='flex gap-1'>
-                  {currentTab.icon} {currentTab.title} <ChevronRight size={16} />
-                </Link>
-              </Button>
+              <div className={'flex gap-1 ' + buttonVariants({ variant: "outline" })}>
+                {currentTab && (<>{currentTab.icon} {currentTab.title}</>)}
+                {!currentTab && <>Menu</>}
+                <ChevronRight size={16} />
+              </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent className='flex flex-col gap-1'>
               {tabs.map((t, idx) => (

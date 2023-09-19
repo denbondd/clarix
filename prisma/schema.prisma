@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model agent_settings {
+  agent_setting_id Int      @id @default(autoincrement())
+  system_prompt    String   @db.VarChar(255)
+  temperature      Float
+  agents           agents[]
+}
+
+model agents {
+  agent_id         Int            @id @default(autoincrement())
+  user_id          String         @db.VarChar(32)
+  model_id         Int
+  agent_setting_id Int
+  name             String         @db.VarChar(255)
+  description      String         @db.VarChar(255)
+  agent_settings   agent_settings @relation(fields: [agent_setting_id], references: [agent_setting_id], onDelete: NoAction, onUpdate: NoAction)
+  models           models         @relation(fields: [model_id], references: [model_id], onDelete: NoAction, onUpdate: NoAction)
+  chats            chats[]
+}
+
+model chats {
+  chat_id  Int        @id @default(autoincrement())
+  user_id  String     @db.VarChar(32)
+  name     String     @db.VarChar(255)
+  agent_id Int
+  agents   agents     @relation(fields: [agent_id], references: [agent_id], onDelete: NoAction, onUpdate: NoAction)
+  messages messages[]
+}
+
+model embeddings {
+  embedding_id Int                   @id @default(autoincrement())
+  content      String                @db.VarChar(255)
+  embedding    Unsupported("vector")
+  file_id      Int
+  files        files                 @relation(fields: [file_id], references: [file_id], onDelete: NoAction, onUpdate: NoAction)
+  msg_sources  msg_sources[]
+}
+
+model files {
+  file_id       Int          @id @default(autoincrement())
+  name          String       @db.VarChar(255)
+  filestatus_id Int
+  folder_id     Int
+  created_at    DateTime     @default(dbgenerated("CURRENT_DATE")) @db.Date
+  edited_at     DateTime     @default(dbgenerated("CURRENT_DATE")) @db.Date
+  embeddings    embeddings[]
+  filestatuses  filestatuses @relation(fields: [filestatus_id], references: [filestatus_id], onDelete: NoAction, onUpdate: NoAction)
+  folders       folders      @relation(fields: [folder_id], references: [folder_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model filestatuses {
+  filestatus_id Int     @id @default(autoincrement())
+  name          String  @db.VarChar(255)
+  files         files[]
+}
+
+model folders {
+  folder_id  Int      @id @default(autoincrement())
+  name       String   @db.VarChar(255)
+  user_id    String   @db.VarChar(32)
+  created_at DateTime @default(dbgenerated("CURRENT_DATE")) @db.Date
+  files      files[]
+}
+
+model messages {
+  message_id  Int           @id @default(autoincrement())
+  chat_id     Int
+  inbound     Boolean
+  sent_at     DateTime      @default(dbgenerated("CURRENT_DATE")) @db.Date
+  content     String        @db.VarChar(1024)
+  chats       chats         @relation(fields: [chat_id], references: [chat_id], onDelete: NoAction, onUpdate: NoAction)
+  msg_sources msg_sources[]
+}
+
+model models {
+  model_id Int      @id @default(autoincrement())
+  name     String   @db.VarChar(255)
+  agents   agents[]
+}
+
+model msg_sources {
+  message_id   Int
+  embedding_id Int
+  similarity   Float
+  embeddings   embeddings @relation(fields: [embedding_id], references: [embedding_id], onDelete: NoAction, onUpdate: NoAction)
+  messages     messages   @relation(fields: [message_id], references: [message_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([message_id, embedding_id])
+}

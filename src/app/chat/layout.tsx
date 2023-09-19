@@ -25,7 +25,7 @@ export default function ChatLayout(props: { children: React.ReactNode }) {
         <div className="flex w-full max-w-sm items-center gap-1 mb-4">
           <Input placeholder="Search chat" />
           <Button className="w-12 p-0">
-            <MessageSquarePlus size={20} />
+            <MessageSquarePlus size={22} />
           </Button>
         </div>
         <div className="flex flex-col gap-2">
