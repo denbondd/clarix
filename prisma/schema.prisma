@@ -24,6 +24,8 @@ model agents {
   agent_settings   agent_settings @relation(fields: [agent_setting_id], references: [agent_setting_id], onDelete: NoAction, onUpdate: NoAction)
   models           models         @relation(fields: [model_id], references: [model_id], onDelete: NoAction, onUpdate: NoAction)
   chats            chats[]
+
+  @@unique([user_id, name])
 }
 
 model chats {
@@ -33,48 +35,47 @@ model chats {
   agent_id Int
   agents   agents     @relation(fields: [agent_id], references: [agent_id], onDelete: NoAction, onUpdate: NoAction)
   messages messages[]
+
+  @@unique([user_id, name])
 }
 
 model embeddings {
-  embedding_id Int                   @id @default(autoincrement())
-  content      String                @db.VarChar(255)
-  embedding    Unsupported("vector")
+  embedding_id Int                    @id @default(autoincrement())
+  content      String                 @db.VarChar(255)
+  embedding    Unsupported("vector")?
   file_id      Int
-  files        files                 @relation(fields: [file_id], references: [file_id], onDelete: NoAction, onUpdate: NoAction)
+  files        files                  @relation(fields: [file_id], references: [file_id], onDelete: NoAction, onUpdate: NoAction)
   msg_sources  msg_sources[]
 }
 
 model files {
-  file_id       Int          @id @default(autoincrement())
-  name          String       @db.VarChar(255)
-  filestatus_id Int
-  folder_id     Int
-  created_at    DateTime     @default(dbgenerated("CURRENT_DATE")) @db.Date
-  edited_at     DateTime     @default(dbgenerated("CURRENT_DATE")) @db.Date
-  embeddings    embeddings[]
-  filestatuses  filestatuses @relation(fields: [filestatus_id], references: [filestatus_id], onDelete: NoAction, onUpdate: NoAction)
-  folders       folders      @relation(fields: [folder_id], references: [folder_id], onDelete: NoAction, onUpdate: NoAction)
-}
+  file_id    Int          @id @default(autoincrement())
+  name       String       @db.VarChar(255)
+  folder_id  Int
+  created_at DateTime     @default(dbgenerated("CURRENT_DATE")) @db.Timestamptz(6)
+  edited_at  DateTime     @default(dbgenerated("CURRENT_DATE")) @db.Timestamptz(6)
+  content    String       @db.VarChar(10485760)
+  embeddings embeddings[]
+  folders    folders      @relation(fields: [folder_id], references: [folder_id], onDelete: NoAction, onUpdate: NoAction)
 
-model filestatuses {
-  filestatus_id Int     @id @default(autoincrement())
-  name          String  @db.VarChar(255)
-  files         files[]
+  @@unique([folder_id, name])
 }
 
 model folders {
   folder_id  Int      @id @default(autoincrement())
   name       String   @db.VarChar(255)
   user_id    String   @db.VarChar(32)
-  created_at DateTime @default(dbgenerated("CURRENT_DATE")) @db.Date
+  created_at DateTime @default(dbgenerated("CURRENT_DATE")) @db.Timestamptz(6)
   files      files[]
+
+  @@unique([user_id, name])
 }
 
 model messages {
   message_id  Int           @id @default(autoincrement())
   chat_id     Int
   inbound     Boolean
-  sent_at     DateTime      @default(dbgenerated("CURRENT_DATE")) @db.Date
+  sent_at     DateTime      @default(dbgenerated("CURRENT_DATE")) @db.Timestamptz(6)
   content     String        @db.VarChar(1024)
   chats       chats         @relation(fields: [chat_id], references: [chat_id], onDelete: NoAction, onUpdate: NoAction)
   msg_sources msg_sources[]

@@ -16,21 +16,27 @@ export async function GET(req: NextRequest, { params }: { params: { folderId: st
         select: {
           file_id: true,
           name: true,
-          filestatuses: true,
           created_at: true,
-          edited_at: true
+          edited_at: true,
+          _count: {
+            select: {
+              embeddings: true
+            }
+          }
+        },
+        orderBy: {
+          edited_at: "desc"
         }
       }
     },
     where: {
       folder_id: folderId,
-      AND: {
-        user_id: userId as string
-      }
-    }
+      user_id: userId as string
+    },
   })
 
-  return NextResponse.json(folder)
+  if (!folder) return new NextResponse(null, { status: 404 })
+  else return NextResponse.json(folder)
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { folderId: string } }) {
@@ -43,9 +49,7 @@ export async function PUT(req: NextRequest, { params }: { params: { folderId: st
   const newFolder = await prisma.folders.update({
     where: {
       folder_id: folderId,
-      AND: {
-        user_id: userId as string
-      }
+      user_id: userId as string
     },
     data: {
       name: body.name,
@@ -62,9 +66,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { folderId:
   await prisma.folders.delete({
     where: {
       folder_id: folderId,
-      AND: {
-        user_id: userId as string
-      }
+      user_id: userId as string
     }
   })
 

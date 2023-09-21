@@ -1,315 +1,160 @@
 'use client'
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Pencil, MoreVertical } from "lucide-react"
 import {
   Table,
   TableBody,
   TableCaption,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@radix-ui/react-scroll-area"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import useBackendFetch from "@/hooks/useBackendFetch"
-import InputsDialog, { InputsDialogValues } from "@/components/inputs-dialog"
-import { toast } from "@/components/ui/use-toast"
-import { backendFetch } from "@/utils/backendFetch"
-import { useRouter } from "next/navigation"
 import { useState } from "react"
+import FolderHeader from "./folder-header"
+import CreateDocuementsSection from "./create-documents-section"
+import FileRow from "./file-row"
+import { FileEntity, FolderEntity } from "@/lib/entities"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog"
+import { DialogTrigger } from "@radix-ui/react-dialog"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
+import { Check, ChevronsUpDown } from "lucide-react"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
+import { cn } from "@/lib/utils"
+import { toast } from "@/components/ui/use-toast"
 
-interface Folder {
-  folder_id: number;
-  name: string;
-  user_id: string;
-  created_at: string;
-  files: {
-    name: string;
-    created_at: string;
-    file_id: number;
-    edited_at: string;
-    filestatuses: {
-      filestatus_id: number;
-      name: string;
-    };
-  }[];
-}
-
-const actions = [
-  {
-    icon: <Pencil />,
-    title: 'Write',
-    description: 'Write or copy paste your document'
-  }
-]
-
-export default function Folder({ params }: { params: { folderId: string } }) {
-  const { data: folder, error, isLoading } = useBackendFetch<Folder>('/kb/folders/' + params.folderId)
-  const router = useRouter()
-  const [openAnyDialog, setOpenAnyDialog] = useState(false)
+export default function FolderElem({ params }: { params: { folderId: string } }) {
+  const { data: folder, setData: setFolder, error, isLoading } = useBackendFetch<FolderEntity>('/kb/folders/' + params.folderId)
   const [openAnyMenu, setOpenAnyMenu] = useState(false)
-  // let folder = {
-  //   "folder_id": 7,
-  //   "name": "hahaha",
-  //   "created_at": "2023-09-18T00:00:00.000Z",
-  //   "user_id": "user_2VP0ILQP8B8gz9xRcfjalh4Vhpn",
-  //   "files": []
-  // }
-  // let error = false
-  // let isLoading = false
 
-  const handleCreateNewFile = (values?: InputsDialogValues): Promise<void> => {
-    console.log(values)
-    if (!values?.fileName) {
-      toast({
-        title: 'Input file name'
-      })
-      return Promise.resolve()
-    }
-    if (!values.content) {
-      toast({
-        title: 'Input file content'
-      })
-      return Promise.resolve()
-    }
-    console.log(values?.fileName + ' ' + values?.content)
-    // return backendFetch('/kb/files', {
-    //   method: 'POST',
-    //   body: JSON.stringify({
-    //     name: values.fileName,
-    //     content: values.content
-    //   })
-    // })
-    //   .then(res => res.json())
-    //   .then(json => {
-    //     const newFile = (json as {
+  const [changeFolderFile, setChangeFolderFile] = useState<FileEntity>()
+  const [openChangeFolder, setOpenChangeFolder] = useState(false)
+  const [enteredFName, setEnteredFName] = useState('')
 
-    //     })
-    //   })
-    return Promise.resolve()
+  const { data: allFolders } = useBackendFetch<FolderEntity[]>('/kb/folders')
+
+  const handleOnFileCreate = (file: FileEntity) => {
+    const newFolder: FolderEntity | undefined = folder ? {
+      name: folder.name,
+      created_at: folder.created_at,
+      folder_id: folder.folder_id,
+      user_id: folder.user_id,
+      files: folder.files.concat(file)
+    } : undefined
+    setFolder(newFolder)
   }
 
-  const handleFolderRename = (values?: InputsDialogValues): Promise<void> => {
-    if (!values?.folderName) {
+  const handleChangeFolder = () => { //todo move change folder part to another tsx file
+    if (!enteredFName) {
       toast({
         title: 'Input folder name'
       })
-      return Promise.resolve()
     }
-    return backendFetch('/kb/folders/' + folder?.folder_id, {
-      method: 'PUT',
-      body: JSON.stringify({
-        name: values?.folderName
+    if (enteredFName === folder?.name) {
+      toast({
+        title: 'File is already in this folder'
       })
-    })
-      .then(res => res.json())
-      .then(json => { window.location.reload() })
-      .catch(err => {
-        console.error(`/kb/folders\n${err}`)
-        toast({
-          title: 'Something went wrong(',
-          description: 'Please, try again later',
-          variant: 'destructive',
-        })
-      })
+    }
+
   }
 
-  const handleFolderDelete = (values?: InputsDialogValues): Promise<void> => {
-    return backendFetch('/kb/folders/' + folder?.folder_id, {
-      method: 'DELETE',
-    })
-      .then(res => { window.location.href = '/kb' })
-      .catch(err => {
-        console.error(`/kb/folders\n${err}`)
-        toast({
-          title: 'Something went wrong(',
-          description: 'Please, try again later',
-          variant: 'destructive',
-        })
-      })
-  }
-
-  const dialogProps = { open: openAnyDialog, onOpenChange: setOpenAnyDialog }
-
-  const getStatusBadge = (fileStatus: string) => {
-    if (fileStatus === "Learned")
-      return (
-        <Badge variant='success'>
-          {fileStatus}
-        </Badge>
-      )
-    else return <></>
-  }
   if (isLoading) return 'Loading...'
   else if (error) return 'Error'
   else if (folder) return (
     <ScrollArea className="max-h-[calc(100vh-60px)] w-full flex-1">
       <div className="m-2 flex flex-col gap-4">
-        <DropdownMenu open={openAnyMenu} onOpenChange={setOpenAnyMenu}>
-          <DropdownMenuTrigger className="w-max">
-            <Button asChild variant='secondary' className="w-max text-2xl font-semibold">
-              <div>
-                {folder.name}
-              </div>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <InputsDialog
-              inputs={[
-                {
-                  name: 'folderName',
-                  placeholder: 'New name for this folder'
-                }
-              ]}
-              submitBtnText="Rename"
-              title="Rename folder"
-              onSubmit={handleFolderRename}
-              asChild
-            >
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                Rename
-              </DropdownMenuItem>
-            </InputsDialog>
-            <DropdownMenuSeparator />
-            <InputsDialog
-              submitBtnText='Delete folder'
-              onSubmit={handleFolderDelete}
-              isDestructive
-              title="Delete folder"
-              description={"Are you sure you want to delete folder " + folder.name +
-                '? You will lost all your files and could not recover them ' +
-                'unless you have a local copy.'}
-              asChild
-            >
-              <DropdownMenuItem variant='destructive' onSelect={(e) => e.preventDefault()}>
-                Delete
-              </DropdownMenuItem>
-            </InputsDialog>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <FolderHeader folder={folder} openAnyMenu={openAnyMenu} setOpenAnyMenu={setOpenAnyMenu} />
         <hr />
-        <div>
-          <h4 className="text-xl font-semibold tracking-tight mb-2">Create Documents</h4>
-          <div className="flex flex-col gap-2">
-            {actions.map((a, idx) => (
-              <InputsDialog
-                key={idx}
-                asChild
-                inputs={[
-                  {
-                    name: 'fileName',
-                    placeholder: 'File name',
-                  },
-                  {
-                    name: 'content',
-                    placeholder: 'File content',
-                    size: 4
-                  }
-                ]}
-                submitBtnText="Create File"
-                title="Create new File"
-                onSubmit={handleCreateNewFile}
-              >
-                <Button asChild variant='ghost' key={idx}>
-                  <Card className="block flex-1 cursor-pointer w-max">
-                    <CardHeader>
-                      {a.icon}
-                    </CardHeader>
-                    <CardContent>
-                      <CardTitle>{a.title}</CardTitle>
-                    </CardContent>
-                    <CardFooter>
-                      <CardDescription>{a.description}</CardDescription>
-                    </CardFooter>
-                  </Card>
-                </Button>
-              </InputsDialog>
-            ))}
-          </div>
-        </div>
+        <CreateDocuementsSection onCreate={handleOnFileCreate} folderId={params.folderId} />
 
         <div>
           <h4 className="text-xl font-semibold tracking-tight mb-2">Stored Documents</h4>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Edited On</TableHead>
-                <TableHead>Created On</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            {(!folder.files || folder.files.length === 0) && (
-              <TableCaption>
-                NO FILES
-              </TableCaption>
-            )}
-            <TableBody>
-              {folder.files.map((f, idx) => (
-                <TableRow key={idx}>
-                  <TableCell>{f.name}</TableCell>
-                  <TableCell>
-                    {getStatusBadge(f.filestatuses.name)}
-                  </TableCell>
-                  <TableCell>{f.edited_at}</TableCell>
-                  <TableCell>{f.created_at}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <Button variant='ghost' className="p-0 h-10 w-10" asChild>
-                          <div>
-                            <MoreVertical size={18} />
-                          </div>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem>
-                          <InputsDialog
-                            submitBtnText="Rename"
-                            inputs={[
-                              {
-                                name: 'fileName',
-                                placeholder: 'File name',
-                              }
-                            ]}
-                            onSubmit={(p) => new Promise((res, rej) => console.log(p?.fileName))}
-                            title="Rename file"
-                          >
-                            Rename
-                          </InputsDialog>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          Edit content
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          Change folder
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem variant='destructive'>
-                          <InputsDialog
-                            title="Delete file"
-                            description={"Are you sure you want to delete file " + f.name +
-                              '? You will lost it and will not be able to recover it ' +
-                              'unless you have a local copy.'}
-                            onSubmit={(p) => new Promise((res, rej) => console.log('hahaha'))}
-                            isDestructive
-                            submitBtnText="Delete"
-                          >
-                            Delete
-                          </InputsDialog>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+          <Dialog>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Edited On</TableHead>
+                  <TableHead>Created On</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              {(!folder.files || folder.files.length === 0) && (
+                <TableCaption>
+                  NO FILES
+                </TableCaption>
+              )}
+              <TableBody>
+                {folder.files.map((f, idx) => (
+                  <FileRow file={f} onChangeFolderClick={() => setChangeFolderFile(f)} key={idx} />
+                ))}
+              </TableBody>
+            </Table>
+
+            <DialogContent className="w-max">
+              <DialogTitle>
+                Change folder for {changeFolderFile?.name}
+              </DialogTitle>
+              <DialogDescription>
+                Choose new folder:
+              </DialogDescription>
+              <Popover open={openChangeFolder} onOpenChange={setOpenChangeFolder}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openChangeFolder}
+                    className="justify-between w-[200px]"
+                  >
+                    {enteredFName
+                      ? allFolders?.find((fold) => fold.name === enteredFName)?.name
+                      : "Select folder..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search folder..." />
+                    <CommandEmpty>No folders found.</CommandEmpty>
+                    <CommandGroup>
+                      {allFolders?.map((fold) => (
+                        <CommandItem
+                          key={fold.folder_id}
+                          onSelect={(currentValue) => {
+                            setEnteredFName(currentValue === enteredFName ? "" : currentValue)
+                            setOpenChangeFolder(false)
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              enteredFName === fold.name ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {fold.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <DialogFooter>
+                <DialogTrigger asChild>
+                  <Button
+                    variant='secondary'
+                    onClick={() => setEnteredFName('')}
+                  >
+                    Cancel
+                  </Button>
+                </DialogTrigger>
+                <Button onClick={handleChangeFolder} variant='default'>
+                  Change Folder
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 

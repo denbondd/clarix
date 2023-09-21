@@ -16,7 +16,7 @@ export function backendFetch(
       if (resp.ok) {
         return resp
       } else {
-        throw new Error(`${resp}\n${resp.statusText}`)
+        throw new Error(`${resp}\n${resp.statusText}\n${resp}`)
       }
     })
 }

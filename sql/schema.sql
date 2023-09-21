@@ -7,36 +7,30 @@ DROP TABLE IF EXISTS models;
 DROP TABLE IF EXISTS embeddings;
 DROP TABLE IF EXISTS files;
 DROP TABLE IF EXISTS folders;
-DROP TABLE IF EXISTS filestatuses;
 
 -- KnowledbeBase module
-CREATE TABLE filestatuses (
-    filestatus_id SERIAL PRIMARY KEY NOT NULL,
-    name VARCHAR(255) NOT NULL
-);
-
 CREATE TABLE folders (
     folder_id SERIAL PRIMARY KEY NOT NULL,
     name VARCHAR(255) NOT NULL,
     user_id VARCHAR(32) NOT NULL,
-    created_at DATE NOT NULL DEFAULT current_date,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	UNIQUE(user_id, name)
 );
 
 CREATE TABLE files (
     file_id SERIAL PRIMARY KEY NOT NULL,
     name VARCHAR(255) NOT NULL,
-    filestatus_id INT NOT NULL REFERENCES filestatuses(filestatus_id),
     folder_id INT NOT NULL REFERENCES folders(folder_id),
-    created_at DATE NOT NULL DEFAULT current_date,
-    edited_at DATE NOT NULL DEFAULT current_date,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    edited_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	content VARCHAR(10485760) NOT NULL,
 	UNIQUE(folder_id, name)
 );
 
 CREATE TABLE embeddings (
     embedding_id SERIAL PRIMARY KEY NOT NULL,
     content VARCHAR(255) NOT NULL,
-    embedding VECTOR(1536) NOT NULL,
+    embedding VECTOR(1536),
     file_id INT NOT NULL REFERENCES files(file_id)
 );
 
@@ -75,7 +69,7 @@ CREATE TABLE messages (
     message_id SERIAL PRIMARY KEY NOT NULL,
     chat_id INT NOT NULL REFERENCES chats(chat_id),
     inbound BOOLEAN NOT NULL,
-    sent_at DATE NOT NULL DEFAULT current_date,
+    sent_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     content VARCHAR(1024) NOT NULL
 );
 

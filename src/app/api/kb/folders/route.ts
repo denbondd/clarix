@@ -21,6 +21,9 @@ export async function GET() {
       user_id: {
         equals: userId as string
       }
+    },
+    orderBy: {
+      created_at: 'desc'
     }
   })
 
