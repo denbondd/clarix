@@ -17,20 +17,16 @@ import FileRow from "./file-row"
 import { FileEntity, FolderEntity } from "@/lib/entities"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog"
 import { DialogTrigger } from "@radix-ui/react-dialog"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
-import { Check, ChevronsUpDown } from "lucide-react"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
-import { cn } from "@/lib/utils"
 import { toast } from "@/components/ui/use-toast"
+import { Combobox } from "@/components/ui/combobox"
 
 export default function FolderElem({ params }: { params: { folderId: string } }) {
   const { data: folder, setData: setFolder, error, isLoading } = useBackendFetch<FolderEntity>('/kb/folders/' + params.folderId)
   const [openAnyMenu, setOpenAnyMenu] = useState(false)
 
   const [changeFolderFile, setChangeFolderFile] = useState<FileEntity>()
-  const [openChangeFolder, setOpenChangeFolder] = useState(false)
-  const [enteredFName, setEnteredFName] = useState('')
+  const [enteredFId, setEnteredFId] = useState('')
 
   const { data: allFolders } = useBackendFetch<FolderEntity[]>('/kb/folders')
 
@@ -45,13 +41,13 @@ export default function FolderElem({ params }: { params: { folderId: string } })
     setFolder(newFolder)
   }
 
-  const handleChangeFolder = () => { //todo move change folder part to another tsx file
-    if (!enteredFName) {
+  const handleChangeFolder = () => {
+    if (!enteredFId) {
       toast({
         title: 'Input folder name'
       })
     }
-    if (enteredFName === folder?.name) {
+    if (enteredFId === folder?.folder_id.toString()) {
       toast({
         title: 'File is already in this folder'
       })
@@ -100,51 +96,24 @@ export default function FolderElem({ params }: { params: { folderId: string } })
               <DialogDescription>
                 Choose new folder:
               </DialogDescription>
-              <Popover open={openChangeFolder} onOpenChange={setOpenChangeFolder}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={openChangeFolder}
-                    className="justify-between w-[200px]"
-                  >
-                    {enteredFName
-                      ? allFolders?.find((fold) => fold.name === enteredFName)?.name
-                      : "Select folder..."}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
-                  <Command>
-                    <CommandInput placeholder="Search folder..." />
-                    <CommandEmpty>No folders found.</CommandEmpty>
-                    <CommandGroup>
-                      {allFolders?.map((fold) => (
-                        <CommandItem
-                          key={fold.folder_id}
-                          onSelect={(currentValue) => {
-                            setEnteredFName(currentValue === enteredFName ? "" : currentValue)
-                            setOpenChangeFolder(false)
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              enteredFName === fold.name ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {fold.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+              <Combobox
+                btnTriggerText="Select folder..."
+                noFoundText="No folder found"
+                placeholder="Search folder..."
+                elements={allFolders?.map(f => {
+                  return {
+                    label: f.name,
+                    value: f.folder_id.toString()
+                  }
+                }) ?? []}
+                value={enteredFId}
+                onValueChange={setEnteredFId}
+              />
               <DialogFooter>
                 <DialogTrigger asChild>
                   <Button
                     variant='secondary'
-                    onClick={() => setEnteredFName('')}
+                    onClick={() => setEnteredFId('')}
                   >
                     Cancel
                   </Button>
