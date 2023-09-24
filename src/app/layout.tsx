@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import Toolbar from './toolbar'
 import { Toaster } from '@/components/ui/toaster'
+import { ThemeProvider } from '@/components/theme-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -21,15 +22,22 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={inter.className}>
-          <div className='flex flex-col max-w-[100rem] m-auto px-2'>
-            <div>
-              <Toolbar />
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className='flex flex-col max-w-[100rem] m-auto px-2'>
+              <div>
+                <Toolbar />
+              </div>
+              <div className='flex-1'>
+                {children}
+              </div>
             </div>
-            <div className='flex-1'>
-              {children}
-            </div>
-          </div>
-          <Toaster />
+            <Toaster />
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>

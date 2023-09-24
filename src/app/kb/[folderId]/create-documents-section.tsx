@@ -1,54 +1,41 @@
 'use client'
 
-import { InputsDialogValues } from "@/components/inputs-dialog"
+import { LoadingButton } from "@/components/loading-button"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/use-toast"
-import { FileEntity } from "@/lib/entities"
+
+import { FileEntity, FolderEntity } from "@/lib/entities"
 import { backendFetch } from "@/utils/backendFetch"
-import { Loader2, Pencil } from "lucide-react"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Pencil } from "lucide-react"
 import { useState } from "react"
+import { useForm } from "react-hook-form"
+import * as z from 'zod'
 
 interface CreateDocuementsSectionProps {
-  folderId: string,
+  folder: FolderEntity,
   onCreate: (file: FileEntity) => void
 }
 
 export default function CreateDocuementsSection(props: CreateDocuementsSectionProps) {
-  const [fileName, setFileName] = useState('')
-  const [content, setContent] = useState('')
-
   const [openDialog, setOpenDialog] = useState(false)
   const [isLoading, setIsloading] = useState(false)
 
-  const handleCreateNewFile = () => {
-    if (!fileName) {
-      toast({
-        title: 'Input file name'
-      })
-      return Promise.resolve()
-    }
-    if (!content) {
-      toast({
-        title: 'Input file content'
-      })
-      return Promise.resolve()
-    }
-
+  const handleCreateNewFile = (values: z.infer<typeof createDocSchema>) => {
     setIsloading(true)
-    return backendFetch('/kb/files', {
+    backendFetch('/kb/files', {
       method: 'POST',
       body: JSON.stringify({
-        name: fileName,
-        content: content,
-        folderId: Number.parseInt(props.folderId)
+        name: values.fileName,
+        content: values.content,
+        folderId: props.folder.folder_id
       })
     })
-      // .then(_ => window.location.reload)
       .then(res => res.json())
       .then(json => {
         const newFile = json as {
@@ -83,6 +70,21 @@ export default function CreateDocuementsSection(props: CreateDocuementsSectionPr
       .finally(() => setIsloading(false))
   }
 
+  const createDocSchema = z.object({
+    fileName: z.string({ required_error: 'File name is required' })
+      .min(3, { message: 'File name must me at least 3 characters' })
+      .max(60, { message: 'Too long for a file name, try something shorter' })
+      .refine(
+        name => !props.folder.files.find(f => f.name == name),
+        { message: 'File with this name already exists in this folder' }
+      ),
+    content: z.string({ required_error: 'File content is required' })
+  })
+
+  const form = useForm<z.infer<typeof createDocSchema>>({
+    resolver: zodResolver(createDocSchema),
+  })
+
   return (
     <div>
       <h4 className="text-xl font-semibold tracking-tight mb-2">Create Documents</h4>
@@ -109,36 +111,52 @@ export default function CreateDocuementsSection(props: CreateDocuementsSectionPr
                 Create new File
               </DialogTitle>
             </DialogHeader>
-            <Label>File name</Label>
-            <Input
-              placeholder="File name"
-              value={fileName}
-              onChange={v => setFileName(v.target.value)}
-            />
-            <hr />
-            <Label>File content</Label>
-            <Textarea
-              placeholder="File content"
-              value={content}
-              onChange={v => setContent(v.target.value)}
-            />
-            <DialogFooter>
-              <DialogTrigger asChild>
-                <Button variant='secondary'>
-                  Cancel
-                </Button>
-              </DialogTrigger>
-              <Button
-                onClick={handleCreateNewFile}
-                disabled={isLoading}
-              >
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create file
-              </Button>
-            </DialogFooter>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleCreateNewFile)}>
+                <FormField
+                  control={form.control}
+                  name="fileName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Folder name
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder='File name' {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="content"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Folder name
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea placeholder='File content' {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter className="mt-4">
+                  <DialogTrigger asChild>
+                    <Button variant='secondary' >
+                      Cancel
+                    </Button>
+                  </DialogTrigger>
+                  <LoadingButton isLoading={isLoading} type="submit">
+                    Create
+                  </LoadingButton>
+                </DialogFooter>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
-
       </div>
     </div>
   )

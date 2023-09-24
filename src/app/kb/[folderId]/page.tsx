@@ -62,7 +62,7 @@ export default function FolderElem({ params }: { params: { folderId: string } })
       <div className="m-2 flex flex-col gap-4">
         <FolderHeader folder={folder} openAnyMenu={openAnyMenu} setOpenAnyMenu={setOpenAnyMenu} />
         <hr />
-        <CreateDocuementsSection onCreate={handleOnFileCreate} folderId={params.folderId} />
+        <CreateDocuementsSection onCreate={handleOnFileCreate} folder={folder} />
 
         <div>
           <h4 className="text-xl font-semibold tracking-tight mb-2">Stored Documents</h4>

@@ -1,10 +1,10 @@
 'use client'
 
-import InputsDialog, { InputsDialogValues } from "@/components/inputs-dialog";
+import ConfirmDialog from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { toast } from "@/components/ui/use-toast";
+import { generalErrorToast, toast } from "@/components/ui/use-toast";
 import useBackendFetch from "@/hooks/useBackendFetch";
 import { FileEntity } from "@/lib/entities";
 import { backendFetch } from "@/utils/backendFetch";
@@ -16,24 +16,14 @@ export default function File({ params }: { params: { fileId: string } }) {
   const { data: file, error, isLoading } = useBackendFetch<FileEntity>('/kb/files/' + params.fileId)
   const router = useRouter()
 
-  const handleDeleteFile = (_?: InputsDialogValues): Promise<void> => {
+  const handleDeleteFile = (): Promise<void> => {
     return backendFetch('kb/files/' + file?.file_id, {
       method: 'DELETE'
     })
-      .then(res => {
-        if (res.ok) {
-          router.replace('/kb/' + file?.folder_id)
-        } else {
-          throw new Error
-        }
-      })
+      .then(_ => router.replace('/kb/' + file?.folder_id))
       .catch(err => {
         console.error(`/kb/files/${file?.file_id}\n${err}`)
-        toast({
-          title: 'Something went wrong(',
-          description: 'Please, try again later',
-          variant: 'destructive',
-        })
+        generalErrorToast()
       })
   }
 
@@ -60,24 +50,24 @@ export default function File({ params }: { params: { fileId: string } }) {
             </div>
             <div className="flex gap-2">
               <Button asChild>
-                <Link href={file.file_id + '/edit'}>
+                <Link href={file?.file_id + '/edit'}>
                   Edit
                 </Link>
               </Button>
-              <InputsDialog
+              <ConfirmDialog
                 title="Delete file"
                 description={"Are you sure you want to delete file " + file?.name +
                   '? You will lost it and will not be able to recover it ' +
                   'unless you have a local copy.'}
                 onSubmit={handleDeleteFile}
                 isDestructive
-                submitBtnText="Delete"
+                confirmBtnText="Delete"
                 asChild
               >
                 <Button variant='destructive'>
                   Delete
                 </Button>
-              </InputsDialog>
+              </ConfirmDialog>
             </div>
           </div>
           <hr />

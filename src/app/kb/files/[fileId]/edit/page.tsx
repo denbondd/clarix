@@ -1,73 +1,91 @@
 'use client'
 
-import InputsDialog, { InputsDialogValues } from "@/components/inputs-dialog";
+import ConfirmDialog from "@/components/confirm-dialog";
+import { LoadingButton } from "@/components/loading-button";
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { generalErrorToast, toast } from "@/components/ui/use-toast";
+
 import useBackendFetch from "@/hooks/useBackendFetch";
-import { FileEntity } from "@/lib/entities";
+import { FileEntity, FolderEntity } from "@/lib/entities";
 import { backendFetch } from "@/utils/backendFetch";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from 'zod'
 
 export default function EditFile({ params }: { params: { fileId: string } }) {
   const { data: file, error, isLoading } = useBackendFetch<FileEntity>('/kb/files/' + params.fileId)
-  const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
+  //TODO const { data: folder } = useBackendFetch<FolderEntity>('/kb/folders/' + file?.folder_id)
+
   const [isSaveLoading, setIsSaveLoading] = useState(false)
   const router = useRouter()
 
-  useEffect(() => {
-    setTitle(file?.name ?? '')
-    setContent(file?.content ?? '')
-  }, [file])
-
-  const handleDeleteFile = (_?: InputsDialogValues): Promise<void> => {
+  const handleDeleteFile = (): Promise<void> => {
     return backendFetch('kb/files/' + file?.file_id, {
       method: 'DELETE'
     })
-      .then(res => {
-        if (res.ok) {
-          router.replace('/kb/' + file?.folder_id)
-        } else {
-          throw new Error
-        }
-      })
+      .then(_ => router.replace('/kb/' + file?.folder_id))
       .catch(err => {
         console.error(`/kb/files/${file?.file_id}\n${err}`)
         generalErrorToast()
       })
   }
 
-  const handleSaveLearnFile = () => { //todo check if content/name is the same
+  const handleSaveLearnFile = async (values: z.infer<typeof editDocSchema>) => {
     setIsSaveLoading(true)
-    backendFetch('/kb/files/' + file?.file_id, {
-      method: 'PUT',
-      body: JSON.stringify({
-        name: title === file?.name ? undefined : title,
-        content: content === file?.content ? undefined : content
+    if (file?.name !== values.fileName || file?.content !== values.content) {
+      await backendFetch('/kb/files/' + file?.file_id, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: values.fileName === file?.name ? undefined : values.fileName,
+          content: values.content === file?.content ? undefined : values.content
+        })
       })
-    })
-      .then(res => {
-        if (res.ok) {
-          toast({
-            title: 'File was saved!',
-            description: 'Let us learn new material'
-          })
-          return backendFetch('/kb/files/' + file?.file_id + '/embeddings', { method: 'PUT' })
-        } else {
-          throw Error(window.location.href + '\n' + res)
-        }
-      })
-      .catch(err => {
-        console.error(`/kb/folders\n${err}`)
-        generalErrorToast()
-      })
-      .finally(() => setIsSaveLoading(false))
+        .then(_ => {
+          if (values.content !== file?.content) {
+            toast({
+              title: 'File was saved!',
+              description: 'Let us learn new material'
+            })
+            return backendFetch(
+              '/kb/files/' + file?.file_id + '/embeddings',
+              { method: 'PUT' }
+            ) as unknown as Promise<void>
+          } else {
+            return Promise.resolve()
+          }
+        })
+        .catch(err => {
+          console.error(`/kb/folders\n${err}`)
+          generalErrorToast()
+        })
+        .finally(() => setIsSaveLoading(false))
+    }
+    router.push('/kb/files/' + file?.file_id)
   }
+
+  const editDocSchema = z.object({
+    fileName: z.string({ required_error: 'File name is required' })
+      .min(3, { message: 'File name must me at least 3 characters' })
+      .max(60, { message: 'Too long for a file name, try something shorter' }),
+    //TODO if name is different from origin, but not unique in the folder
+    content: z.string({ required_error: 'File content is required' })
+  })
+
+  const form = useForm<z.infer<typeof editDocSchema>>({
+    resolver: zodResolver(editDocSchema),
+  })
+
+  useEffect(() => {
+    form.setValue('fileName', file?.name ?? '')
+    form.setValue('content', file?.content ?? '')
+  }, [file])
 
   return (
     <div className="m-2">
@@ -94,35 +112,61 @@ export default function EditFile({ params }: { params: { fileId: string } }) {
                   Cancel
                 </Link>
               </Button>
-              <Button onClick={handleSaveLearnFile} disabled={isSaveLoading}>
-                {isSaveLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save and Learn
-              </Button>
-              <InputsDialog
+              <ConfirmDialog
                 title="Delete file"
                 description={"Are you sure you want to delete file " + file?.name +
                   '? You will lost it and will not be able to recover it ' +
                   'unless you have a local copy.'}
                 onSubmit={handleDeleteFile}
                 isDestructive
-                submitBtnText="Delete"
+                confirmBtnText="Delete"
                 asChild
               >
                 <Button variant='destructive'>
                   Delete
                 </Button>
-              </InputsDialog>
+              </ConfirmDialog>
+
+              <LoadingButton type="submit" form="editForm" isLoading={isSaveLoading}>
+                Save and Learn
+              </LoadingButton>
             </div>
           </div>
           <hr />
-          <Input
-            onChange={v => setTitle(v.target.value)}
-            value={title}
-          />
-          <Textarea
-            onChange={v => setContent(v.target.value)}
-            value={content}
-          />
+          <Form {...form}>
+            <form className="w-full" onSubmit={form.handleSubmit(handleSaveLearnFile)} id="editForm">
+              <FormField
+                control={form.control}
+                name="fileName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      File name
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder='File name' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="content"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      File name
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea placeholder='File content' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </form>
+          </Form>
         </div>
       )}
     </div>

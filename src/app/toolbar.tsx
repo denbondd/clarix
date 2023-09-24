@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useEffect, useState } from 'react'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 interface Tab {
   title: string,
@@ -24,17 +25,17 @@ const tabs: Tab[] = [
   {
     title: 'Chat',
     href: '/chat',
-    icon: <MessageSquare />
+    icon: <MessageSquare strokeWidth={1.5} />
   },
   {
     title: 'Agents',
     href: '/agents',
-    icon: <Bot />
+    icon: <Bot strokeWidth={1.5} />
   },
   {
     title: 'Knowledge Base',
     href: '/kb',
-    icon: <FileText />
+    icon: <FileText strokeWidth={1.5} />
   },
 ]
 
@@ -91,7 +92,10 @@ export default function Toolbar() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <UserButton />
+        <div className='flex gap-2 items-center'>
+          <ThemeToggle />
+          <UserButton />
+        </div>
       </div>
     )
   }

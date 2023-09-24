@@ -3,35 +3,25 @@ import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { MoreVertical } from "lucide-react"
-import InputsDialog, { InputsDialogValues } from "@/components/inputs-dialog"
 import { FileEntity } from "@/lib/entities"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { backendFetch } from "@/utils/backendFetch"
-import { toast } from "@/components/ui/use-toast"
+import { generalErrorToast } from "@/components/ui/use-toast"
 import { DialogTrigger } from "@/components/ui/dialog"
+import ConfirmDialog from "@/components/confirm-dialog"
 
 export default function FileRow(props: { file: FileEntity, onChangeFolderClick: () => void }) {
   const router = useRouter()
 
-  const handleDeleteFile = (_?: InputsDialogValues): Promise<void> => {
+  const handleDeleteFile = (): Promise<void> => {
     return backendFetch('kb/files/' + props.file.file_id, {
       method: 'DELETE'
     })
-      .then(res => {
-        if (res.ok) {
-          router.replace('/kb/' + props.file.folder_id)
-        } else {
-          throw new Error
-        }
-      })
+      .then(_ => window.location.reload())
       .catch(err => {
         console.error(`/kb/files/${props.file.file_id}\n${err}`)
-        toast({
-          title: 'Something went wrong(',
-          description: 'Please, try again later',
-          variant: 'destructive',
-        })
+        generalErrorToast()
       })
   }
 
@@ -82,20 +72,20 @@ export default function FileRow(props: { file: FileEntity, onChangeFolderClick: 
               </DropdownMenuItem>
             </DialogTrigger>
             <DropdownMenuSeparator />
-            <InputsDialog
+            <ConfirmDialog
               title="Delete file"
               description={"Are you sure you want to delete file " + props.file.name +
                 '? You will lost it and will not be able to recover it ' +
                 'unless you have a local copy.'}
               onSubmit={handleDeleteFile}
               isDestructive
-              submitBtnText="Delete"
+              confirmBtnText="Delete"
               asChild
             >
               <DropdownMenuItem variant='destructive' onSelect={(e) => e.preventDefault()}>
                 Delete
               </DropdownMenuItem>
-            </InputsDialog>
+            </ConfirmDialog>
           </DropdownMenuContent>
         </DropdownMenu>
       </TableCell>
