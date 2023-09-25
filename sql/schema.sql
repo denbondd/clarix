@@ -1,8 +1,8 @@
 DROP TABLE IF EXISTS msg_sources;
 DROP TABLE IF EXISTS messages;
 DROP TABLE IF EXISTS chats;
+DROP TABLE IF EXISTS agent_has_folders;
 DROP TABLE IF EXISTS agents;
-DROP TABLE IF EXISTS agent_settings;
 DROP TABLE IF EXISTS models;
 DROP TABLE IF EXISTS embeddings;
 DROP TABLE IF EXISTS files;
@@ -40,20 +40,26 @@ CREATE TABLE models (
     name VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE agent_settings (
-    agent_setting_id SERIAL PRIMARY KEY NOT NULL,
-    system_prompt VARCHAR(255) NOT NULL,
-    temperature DOUBLE PRECISION NOT NULL
-);
-
 CREATE TABLE agents (
     agent_id SERIAL PRIMARY KEY NOT NULL,
     user_id VARCHAR(32) NOT NULL,
-    model_id INT NOT NULL REFERENCES models(model_id),
-    agent_setting_id INT NOT NULL REFERENCES agent_settings(agent_setting_id),
     name VARCHAR(255) NOT NULL,
-    description VARCHAR(255) NOT NULL,
+    description VARCHAR(255),
+	created_on TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	
+    model_id INT NOT NULL REFERENCES models(model_id),
+    system_prompt VARCHAR(255) NOT NULL,
+    temperature INT NOT NULL,
+	
 	UNIQUE(user_id, name)
+);
+
+CREATE TABLE agent_has_folders (
+	agent_id INT NOT NULL,
+    folder_id INT NOT NULL,
+    PRIMARY KEY (agent_id, folder_id),
+    FOREIGN KEY (agent_id) REFERENCES agents(agent_id),
+    FOREIGN KEY (folder_id) REFERENCES folders(folder_id)
 );
 
 -- Chat module

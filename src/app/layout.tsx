@@ -28,7 +28,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <div className='flex flex-col max-w-[100rem] m-auto px-2'>
+            <div className='flex flex-col max-w-[100rem] min-h-screen m-auto px-2'>
               <div>
                 <Toolbar />
               </div>

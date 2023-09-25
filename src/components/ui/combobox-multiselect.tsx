@@ -12,39 +12,40 @@ import {
 import { Command as CommandPrimitive } from "cmdk";
 import { Badge } from "./badge"
 
-interface Element {
-  value: string,
+
+interface Element<T> {
+  value: T,
   label: string
 }
 
-export interface ComboboxProps {
+export interface ComboboxProps<T> {
   placeholder: string,
   btnTriggerText: string,
   noFoundText: string,
   allSelectedText: string,
-  elements: Element[]
+  elements: Element<T>[],
+  selectedValues: T[],
+  onSelectedChange?: (selected: T[]) => void;
 }
 
-export function ComboboxMultiselect(props: ComboboxProps) {
+export function ComboboxMultiselect<T extends (number | string)>(props: ComboboxProps<T>) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [open, setOpen] = React.useState(false);
-  const [selected, setSelected] = React.useState<Element[]>([]);
   const [inputValue, setInputValue] = React.useState("");
 
-  const handleUnselect = React.useCallback((elem: Element) => {
-    setSelected(prev => prev.filter(s => s.value !== elem.value));
-  }, []);
+  const handleUnselect = React.useCallback((elem: T) => {
+    const newSelected = props.selectedValues.filter(s => s !== elem);
+    props.onSelectedChange && props.onSelectedChange(newSelected);
+  }, [props]);
 
   const handleKeyDown = React.useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     const input = inputRef.current
     if (input) {
       if (e.key === "Delete" || e.key === "Backspace") {
         if (input.value === "") {
-          setSelected(prev => {
-            const newSelected = [...prev];
-            newSelected.pop();
-            return newSelected;
-          })
+          const newSelected = [...props.selectedValues];
+          newSelected.pop();
+          props.onSelectedChange && props.onSelectedChange(newSelected);
         }
       }
 
@@ -53,9 +54,11 @@ export function ComboboxMultiselect(props: ComboboxProps) {
         input.blur();
       }
     }
-  }, []);
+  }, [props]);
 
-  const selectables = props.elements.filter(elem => !selected.includes(elem));
+  const selectables = props.elements.filter(
+    (elem) => !props.selectedValues.some((sVal) => sVal === elem.value)
+  );
 
   return (
     <Command onKeyDown={handleKeyDown} className="overflow-visible bg-transparent">
@@ -63,14 +66,14 @@ export function ComboboxMultiselect(props: ComboboxProps) {
         className="group border border-input px-3 py-2 text-sm ring-offset-background rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
       >
         <div className="flex gap-1 flex-wrap">
-          {selected.map((elem) => {
+          {props.selectedValues.map((elem) => {
             return (
-              <Badge key={elem.value}>
-                {elem.label}
+              <Badge key={elem}>
+                {props.elements.find(v => v.value == elem)?.label}
                 <button
                   className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") {
+                    if (e.key === "Escape") {
                       handleUnselect(elem);
                     }
                   }}
@@ -92,7 +95,7 @@ export function ComboboxMultiselect(props: ComboboxProps) {
             onValueChange={setInputValue}
             onBlur={() => setOpen(false)}
             onFocus={() => setOpen(true)}
-            placeholder={selected.length > 0 ? '' : props.btnTriggerText}
+            placeholder={props.selectedValues.length > 0 ? '' : props.btnTriggerText}
             className="bg-transparent outline-none placeholder:text-muted-foreground flex-1"
           />
         </div>
@@ -107,7 +110,7 @@ export function ComboboxMultiselect(props: ComboboxProps) {
           }}
           className="absolute w-full z-10 top-0 rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in"
         >
-          <CommandEmpty>{selected.length > 0 ? props.allSelectedText : props.noFoundText}</CommandEmpty>
+          <CommandEmpty>{props.selectedValues.length > 0 ? props.allSelectedText : props.noFoundText}</CommandEmpty>
           <CommandGroup className="h-full overflow-auto">
             {selectables.map((elem) => {
               return (
@@ -119,7 +122,7 @@ export function ComboboxMultiselect(props: ComboboxProps) {
                   }}
                   onSelect={(value) => {
                     setInputValue("")
-                    setSelected(prev => [...prev, elem])
+                    props.onSelectedChange && props.onSelectedChange([...props.selectedValues, elem.value]);
                   }}
                   className={"cursor-pointer"}
                 >

@@ -7,23 +7,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model agent_settings {
-  agent_setting_id Int      @id @default(autoincrement())
-  system_prompt    String   @db.VarChar(255)
-  temperature      Float
-  agents           agents[]
+model agent_has_folders {
+  agent_id  Int
+  folder_id Int
+  agents    agents  @relation(fields: [agent_id], references: [agent_id], onDelete: NoAction, onUpdate: NoAction)
+  folders   folders @relation(fields: [folder_id], references: [folder_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([agent_id, folder_id])
 }
 
 model agents {
-  agent_id         Int            @id @default(autoincrement())
-  user_id          String         @db.VarChar(32)
-  model_id         Int
-  agent_setting_id Int
-  name             String         @db.VarChar(255)
-  description      String         @db.VarChar(255)
-  agent_settings   agent_settings @relation(fields: [agent_setting_id], references: [agent_setting_id], onDelete: NoAction, onUpdate: NoAction)
-  models           models         @relation(fields: [model_id], references: [model_id], onDelete: NoAction, onUpdate: NoAction)
-  chats            chats[]
+  agent_id          Int                 @id @default(autoincrement())
+  user_id           String              @db.VarChar(32)
+  name              String              @db.VarChar(255)
+  description       String?             @db.VarChar(255)
+  created_on        DateTime            @default(now()) @db.Timestamptz(6)
+  model_id          Int
+  system_prompt     String              @db.VarChar(255)
+  temperature       Int
+  agent_has_folders agent_has_folders[]
+  models            models              @relation(fields: [model_id], references: [model_id], onDelete: NoAction, onUpdate: NoAction)
+  chats             chats[]
 
   @@unique([user_id, name])
 }
@@ -52,8 +56,8 @@ model files {
   file_id    Int          @id @default(autoincrement())
   name       String       @db.VarChar(255)
   folder_id  Int
-  created_at DateTime     @default(dbgenerated("CURRENT_DATE")) @db.Timestamptz(6)
-  edited_at  DateTime     @default(dbgenerated("CURRENT_DATE")) @db.Timestamptz(6)
+  created_at DateTime     @default(now()) @db.Timestamptz(6)
+  edited_at  DateTime     @default(now()) @db.Timestamptz(6)
   content    String       @db.VarChar(10485760)
   embeddings embeddings[]
   folders    folders      @relation(fields: [folder_id], references: [folder_id], onDelete: NoAction, onUpdate: NoAction)
@@ -62,11 +66,12 @@ model files {
 }
 
 model folders {
-  folder_id  Int      @id @default(autoincrement())
-  name       String   @db.VarChar(255)
-  user_id    String   @db.VarChar(32)
-  created_at DateTime @default(dbgenerated("CURRENT_DATE")) @db.Timestamptz(6)
-  files      files[]
+  folder_id         Int                 @id @default(autoincrement())
+  name              String              @db.VarChar(255)
+  user_id           String              @db.VarChar(32)
+  created_at        DateTime            @default(now()) @db.Timestamptz(6)
+  agent_has_folders agent_has_folders[]
+  files             files[]
 
   @@unique([user_id, name])
 }
@@ -75,7 +80,7 @@ model messages {
   message_id  Int           @id @default(autoincrement())
   chat_id     Int
   inbound     Boolean
-  sent_at     DateTime      @default(dbgenerated("CURRENT_DATE")) @db.Timestamptz(6)
+  sent_at     DateTime      @default(now()) @db.Timestamptz(6)
   content     String        @db.VarChar(1024)
   chats       chats         @relation(fields: [chat_id], references: [chat_id], onDelete: NoAction, onUpdate: NoAction)
   msg_sources msg_sources[]
