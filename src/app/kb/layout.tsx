@@ -38,7 +38,7 @@ export default function KbLayout(props: { children: React.ReactNode }) {
     if (!searchFolderName)
       setFolders(allFolders)
     else
-      setFolders(allFolders?.filter(f => f.name.includes(searchFolderName)))
+      setFolders(allFolders?.filter(f => f.name.toLowerCase().includes(searchFolderName.toLowerCase())))
   }, [searchFolderName])
 
   const onSubmit = (values: z.infer<typeof createFolderSchema>) => {
@@ -85,9 +85,8 @@ export default function KbLayout(props: { children: React.ReactNode }) {
   return (
     <div className="flex w-full h-full">
       <Sidebar className='max-w-xs'>
-        <div className="flex w-full items-center mb-4">
+        <div className="flex w-full gap-1 items-center mb-4">
           <Input
-            className="m-1"
             placeholder="Search folder"
             value={searchFolderName}
             onChange={(inp) => setSearchFolderName(inp.target.value)}
@@ -136,7 +135,6 @@ export default function KbLayout(props: { children: React.ReactNode }) {
               </Form>
             </DialogContent>
           </Dialog>
-
         </div>
         <div className=" flex flex-col gap-2">
           {isLoading && <h2>Loading...</h2>}

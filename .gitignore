@@ -3,6 +3,9 @@
 .env
 .env.local
 
+# vscode
+.vscode
+
 # dependencies
 /node_modules
 /.pnp

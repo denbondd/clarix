@@ -37,3 +37,36 @@ export interface AgentEntity {
     folder_id: number;
   }[];
 }
+
+export interface ChatEntity {
+  chat_id: number;
+  user_id: string;
+  name: string;
+  agent_id: number;
+}
+
+export interface MessageEntity {
+  created_at: Date;
+  content: string;
+  message_id: number;
+  msg_roles: {
+      msg_role_id: number;
+      name: string;
+  };
+  msg_sources: {
+      message_id: number;
+      embedding_id: number;
+      similarity: number;
+  }[];
+}
+
+export interface FullChatEntity {
+  name: string;
+  chat_id: number;
+  user_id: string;
+  agents: {
+    name: string;
+    agent_id: number;
+  };
+  messages: MessageEntity[];
+}

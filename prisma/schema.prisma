@@ -79,17 +79,19 @@ model folders {
 model messages {
   message_id  Int           @id @default(autoincrement())
   chat_id     Int
-  inbound     Boolean
-  sent_at     DateTime      @default(now()) @db.Timestamptz(6)
+  role_id     Int
+  created_at  DateTime      @default(now()) @db.Timestamptz(6)
   content     String        @db.VarChar(1024)
   chats       chats         @relation(fields: [chat_id], references: [chat_id], onDelete: NoAction, onUpdate: NoAction)
+  msg_roles   msg_roles     @relation(fields: [role_id], references: [msg_role_id], onDelete: NoAction, onUpdate: NoAction)
   msg_sources msg_sources[]
 }
 
 model models {
-  model_id Int      @id @default(autoincrement())
-  name     String   @db.VarChar(255)
-  agents   agents[]
+  model_id  Int      @id @default(autoincrement())
+  name      String   @db.VarChar(255)
+  tech_name String   @db.VarChar(50)
+  agents    agents[]
 }
 
 model msg_sources {
@@ -100,4 +102,10 @@ model msg_sources {
   messages     messages   @relation(fields: [message_id], references: [message_id], onDelete: NoAction, onUpdate: NoAction)
 
   @@id([message_id, embedding_id])
+}
+
+model msg_roles {
+  msg_role_id Int        @id @default(autoincrement())
+  name        String     @db.VarChar(12)
+  messages    messages[]
 }

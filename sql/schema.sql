@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS models;
 DROP TABLE IF EXISTS embeddings;
 DROP TABLE IF EXISTS files;
 DROP TABLE IF EXISTS folders;
+DROP TABLE IF EXISTS msg_roles;
 
 -- KnowledbeBase module
 CREATE TABLE folders (
@@ -37,7 +38,8 @@ CREATE TABLE embeddings (
 -- Agents module
 CREATE TABLE models (
     model_id SERIAL PRIMARY KEY NOT NULL,
-    name VARCHAR(255) NOT NULL
+    name VARCHAR(255) NOT NULL,
+	tech_name VARCHAR(50) NOT NULL
 );
 
 CREATE TABLE agents (
@@ -71,11 +73,16 @@ CREATE TABLE chats (
 	UNIQUE(user_id, name)
 );
 
+CREATE TABLE msg_roles (
+	msg_role_id SERIAL PRIMARY KEY NOT NULL,
+	name VARCHAR(12) NOT NULL
+);
+
 CREATE TABLE messages (
     message_id SERIAL PRIMARY KEY NOT NULL,
     chat_id INT NOT NULL REFERENCES chats(chat_id),
-    inbound BOOLEAN NOT NULL,
-    sent_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    role_id INT NOT NULL REFERENCES msg_roles(msg_role_id),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     content VARCHAR(1024) NOT NULL
 );
 
