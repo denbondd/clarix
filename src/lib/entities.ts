@@ -42,31 +42,29 @@ export interface ChatEntity {
   chat_id: number;
   user_id: string;
   name: string;
-  agent_id: number;
-}
-
-export interface MessageEntity {
-  created_at: Date;
-  content: string;
-  message_id: number;
-  msg_roles: {
-      msg_role_id: number;
-      name: string;
-  };
-  msg_sources: {
-      message_id: number;
-      embedding_id: number;
-      similarity: number;
-  }[];
-}
-
-export interface FullChatEntity {
-  name: string;
-  chat_id: number;
-  user_id: string;
   agents: {
     name: string;
     agent_id: number;
   };
+}
+
+export interface MessageEntity {
+  message_id: number,
+  created_at: Date,
+  content: string,
+  msg_roles: {
+    msg_role_id: number,
+    name: string,
+  },
+  msg_sources: {
+    embedding_id: number,
+    similarity: number,
+    content: string;
+    file_name: string,
+    folder_name: string
+  }[]
+}
+
+export interface FullChatEntity extends ChatEntity {
   messages: MessageEntity[];
 }

@@ -1,6 +1,5 @@
 'use client'
 
-import useBackendFetch from "@/hooks/useBackendFetch";
 import { useEffect, useState } from "react";
 import { backendFetch } from "@/utils/backendFetch";
 
@@ -16,30 +15,28 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { LoadingButton } from "@/components/loading-button";
-
-interface Folder {
-  folder_id: number,
-  name: string,
-  user_id: string,
-  created_at: string,
-  _count: {
-    files: number,
-  }
-}
+import { useFolders } from "@/hooks/data/useFolders";
+import { FolderEntity } from "@/lib/entities";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import WithLoading from "@/components/with-loading";
 
 export default function KbLayout(props: { children: React.ReactNode }) {
-  const { data: allFolders, error, isLoading } = useBackendFetch<Folder[]>('/kb/folders')
+  const allFolders = useFolders((state) => state.folders)
+  const foldersError = useFolders((state) => state.foldersError)
+
   const [searchFolderName, setSearchFolderName] = useState('')
-  const [folders, setFolders] = useState<Folder[]>()
+  const [folders, setFolders] = useState<FolderEntity[]>()
   const [isAddBtnLoading, setIsAddBtnLoading] = useState(false)
 
-  useEffect(() => setFolders(allFolders), [allFolders])
+  const router = useRouter()
+
   useEffect(() => {
     if (!searchFolderName)
       setFolders(allFolders)
     else
       setFolders(allFolders?.filter(f => f.name.toLowerCase().includes(searchFolderName.toLowerCase())))
-  }, [searchFolderName])
+  }, [searchFolderName, allFolders])
 
   const onSubmit = (values: z.infer<typeof createFolderSchema>) => {
     setIsAddBtnLoading(true)
@@ -55,8 +52,7 @@ export default function KbLayout(props: { children: React.ReactNode }) {
           user_id: string,
           created_at: Date
         })
-        // router.push('/kb/' + newFold.folder_id) //TODO make through router to save resources (need to update folders with new one, close dialog and then use router)
-        window.location.href = '/kb/' + newFold.folder_id
+        router.push('/kb/' + newFold.folder_id)
       })
       .catch(err => {
         console.error(err)
@@ -137,16 +133,19 @@ export default function KbLayout(props: { children: React.ReactNode }) {
           </Dialog>
         </div>
         <div className=" flex flex-col gap-2">
-          {isLoading && <h2>Loading...</h2>}
-          {error && <h2>Error!</h2>}
-          {folders && folders.length === 0 && !searchFolderName && 'You have no folders yet(('}
-          {folders && folders.length > 0 && folders
-            .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
-            .map((f, idx) => (
-              <Button asChild variant='outline' className="justify-start" key={idx}>
-                <a href={'/kb/' + f.folder_id}>{f.name} || {f._count.files}</a>
-              </Button>
-            ))}
+          <WithLoading data={allFolders} error={foldersError}>
+            {folders && folders.length === 0 && !searchFolderName && 'You have no folders yet(('}
+            {folders && folders.length > 0 && folders
+              .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
+              .map((f, idx) => (
+                <Button asChild variant='outline' className="justify-start" key={idx}>
+                  <Link href={'/kb/' + f.folder_id} className="flex justify-between">
+                    <div>{f.name}</div>
+                    <div>{f.files.length}</div>
+                  </Link>
+                </Button>
+              ))}
+          </WithLoading>
         </div>
       </Sidebar>
       <div className="max-w-6xl w-full mx-auto">

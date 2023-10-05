@@ -9,41 +9,6 @@ import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { LangChainStream, Message, StreamingTextResponse } from 'ai';
 import { BytesOutputParser } from 'langchain/schema/output_parser';
 
-export async function GET(req: NextRequest, { params }: { params: { chatId: string } }) {
-  const { userId } = auth()
-
-  const chatId = Number.parseInt(params.chatId)
-
-  const chat = await prisma.chats.findFirst({
-    where: {
-      user_id: userId as string,
-      chat_id: chatId
-    },
-    select: {
-      user_id: true,
-      name: true,
-      chat_id: true,
-      agents: {
-        select: {
-          agent_id: true,
-          name: true
-        }
-      },
-      messages: {
-        select: {
-          message_id: true,
-          content: true,
-          msg_roles: true,
-          created_at: true,
-          msg_sources: true,
-        }
-      }
-    }
-  })
-
-  return NextResponse.json(chat)
-}
-
 const prompt = PromptTemplate.fromTemplate(
   `Context:
   {context}

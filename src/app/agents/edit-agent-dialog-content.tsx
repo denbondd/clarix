@@ -61,14 +61,15 @@ export default function EditAgentDialogContent(props: EditAgentDialogContentProp
 
   useEffect(() => {
     const agent = props.agent
-    form.reset({
-      name: agent?.name,
-      description: agent?.description,
-      folderIds: agent?.agent_has_folders.map(v => v.folder_id),
-      modelId: agent?.models.model_id,
-      systemPrompt: agent?.system_prompt,
-      temperature: agent?.temperature
-    })
+    if (agent)
+      form.reset({
+        name: agent.name,
+        description: agent.description,
+        folderIds: agent.agent_has_folders.map(v => v.folder_id),
+        modelId: agent.models.model_id,
+        systemPrompt: agent.system_prompt,
+        temperature: agent.temperature
+      })
   }, [props.agent])
 
   const agentSchema = z.object({
@@ -76,7 +77,7 @@ export default function EditAgentDialogContent(props: EditAgentDialogContentProp
       .min(3, { message: 'Agent name must me at least 3 characters' })
       .max(60, { message: 'Too long for an agent name, try something shorter' })
       .refine(
-        name => !props.tookNames?.find(a => a == name),
+        name => props.agent?.name === name || !props.tookNames?.find(a => a === name),
         { message: 'Agent with this name already exists' }
       ),
     description: z.string().optional(),
@@ -120,8 +121,8 @@ export default function EditAgentDialogContent(props: EditAgentDialogContentProp
                       <Info size={18} />
                     </TooltipTrigger>
                     <TooltipContent side="right" className="max-w-sm">
-                      These parameters are solely for Agent's identification. They will not
-                      affect your agent's behaviour and only you will see it
+                      {"These parameters are solely for Agent's identification. They will not" +
+                        "affect your agent's behaviour and only you will see it"}
                     </TooltipContent>
                   </Tooltip>
                 </div>
@@ -163,7 +164,7 @@ export default function EditAgentDialogContent(props: EditAgentDialogContentProp
                       <Info size={18} />
                     </TooltipTrigger>
                     <TooltipContent side="right" className="max-w-xs">
-                      These parameters will affect your agent's behaviour
+                      {"These parameters will affect your agent's behaviour"}
                     </TooltipContent>
                   </Tooltip>
                 </div>

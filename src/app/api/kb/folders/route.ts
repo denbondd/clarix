@@ -11,11 +11,7 @@ export async function GET() {
       name: true,
       user_id: true,
       created_at: true,
-      _count: {
-        select: {
-          files: true
-        }
-      }
+      files: true
     },
     where: {
       user_id: {

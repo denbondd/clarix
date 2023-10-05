@@ -5,60 +5,45 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Dialog, DialogTrigger } from "@/components/ui/dialog"
-import EditAgentDialogContent, { AgentParams } from "./edit-agent-dialog-content"
-import useBackendFetch from "@/hooks/useBackendFetch"
-import { AgentEntity, FolderEntity, ModelEntity } from "@/lib/entities"
-import { useState } from "react"
 import WithLoading from "@/components/with-loading"
-import { backendFetch } from "@/utils/backendFetch"
 import { generalErrorToast } from "@/components/ui/use-toast"
 
+import { Dialog, DialogTrigger } from "@/components/ui/dialog"
+import EditAgentDialogContent, { AgentParams } from "./edit-agent-dialog-content"
+import { AgentEntity } from "@/lib/entities"
+import { useState } from "react"
+
+import { useAgents } from "@/hooks/data/useAgents"
+import { useModels } from "@/hooks/data/useModels"
+import { useFolders } from "@/hooks/data/useFolders"
+
 export default function Agents() {
-  const [editAgent, setEditAgent] = useState<AgentEntity>()
+  const allAgents = useAgents((state) => state.agents)
+  const agentsError = useAgents((state) => state.agentsError)
+  const createAgent = useAgents((state) => state.createAgent)
+  const editAgent = useAgents((state) => state.editAgent)
+
+  const allModels = useModels((state) => state.models)
+  const allFolders = useFolders((state) => state.folders)
+
+  const [editAgentObj, setEditAgentObj] = useState<AgentEntity>()
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
-  const { data: allAgents, setData: setAllAgents, error, isLoading } = useBackendFetch<AgentEntity[]>('/agents')
-  const { data: allModels } = useBackendFetch<ModelEntity[]>('/models')
-  const { data: allFolders } = useBackendFetch<FolderEntity[]>('/kb/folders')
-
   const handleCreateAgent = (values: AgentParams) => {
-    return backendFetch('/agents', {
-      method: "POST",
-      body: JSON.stringify(values)
-    })
-      .then(res => res.json())
-      .then(json => {
-        const newAgent = (json as AgentEntity)
-        setAllAgents([newAgent, ...allAgents as AgentEntity[]])
-        setIsCreateOpen(false)
-      })
-      .catch(err => {
-        console.error(`/agents create\n${err}`)
-        generalErrorToast()
-      })
+    return createAgent(values)
+      .then(_ => setIsCreateOpen(false))
+      .catch(_ => { generalErrorToast() })
   }
 
   const handleEditAgent = (values: AgentParams) => {
-    return backendFetch('/agents/' + editAgent?.agent_id, {
-      method: "PUT",
-      body: JSON.stringify(values)
-    })
-      .then(res => res.json())
-      .then(json => {
-        const newAgent = (json as AgentEntity)
-        setAllAgents(allAgents?.map(ag => ag.agent_id === newAgent.agent_id ? newAgent : ag))
-        setIsEditOpen(false)
-      })
-      .catch(err => {
-        console.error(`/agents edit\n${err}`)
-        generalErrorToast()
-      })
+    return editAgent(values, editAgentObj?.agent_id as number)
+      .then(_ => setIsEditOpen(false))
+      .catch(_ => { generalErrorToast() })
   }
-
+  
   return (
-    <WithLoading data={allAgents} error={error} isLoading={isLoading}>
+    <WithLoading data={allAgents} error={agentsError}>
       <div className="max-w-7xl w-full mx-auto my-2 flex flex-col gap-2">
         <div className="flex gap-3 justify-between items-center">
           <div className="font-semibold tracking-tight text-2xl">
@@ -97,7 +82,7 @@ export default function Agents() {
                     Created On: {ag.created_on.toString()}
                   </div>
                   <DialogTrigger asChild>
-                    <Button onClick={() => setEditAgent(ag)}>
+                    <Button onClick={() => setEditAgentObj(ag)}>
                       Edit
                     </Button>
                   </DialogTrigger>
@@ -112,7 +97,7 @@ export default function Agents() {
           </div>
           <EditAgentDialogContent
             type="edit"
-            agent={editAgent}
+            agent={editAgentObj}
             folders={allFolders}
             models={allModels}
             tookNames={allAgents?.map(a => a.name) ?? []}

@@ -1,5 +1,3 @@
-import path from "path"
-
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL
 
 export function backendFetch(
@@ -9,14 +7,14 @@ export function backendFetch(
   if (!BACKEND_URL)
     throw new Error("Please, provide NEXT_PUBLIC_BACKEND_URL")
 
-  const url = path.join(BACKEND_URL, backendPath)
+  const url = BACKEND_URL + backendPath //TODO try as before
 
   return fetch(url, options)
     .then(resp => {
       if (resp.ok) {
         return resp
       } else {
-        throw new Error(`${resp}\n${resp.statusText}\n${resp}`)
+        throw new Error(`${resp.url}\n${resp.statusText}\n${resp.status}\n${resp.type}`)
       }
     })
 }

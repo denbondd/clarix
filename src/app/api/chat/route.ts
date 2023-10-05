@@ -15,6 +15,17 @@ export async function POST(req: NextRequest) {
       user_id: userId as string,
       name: body.name,
       agent_id: body.agentId,
+    },
+    select: {
+      user_id: true,
+      name: true,
+      chat_id: true,
+      agents: {
+        select: {
+          agent_id: true,
+          name: true
+        }
+      }
     }
   })
 
@@ -28,6 +39,17 @@ export async function GET() {
     where: {
       user_id: userId as string
     },
+    select: {
+      user_id: true,
+      name: true,
+      chat_id: true,
+      agents: {
+        select: {
+          agent_id: true,
+          name: true
+        }
+      }
+    }
   })
 
   return NextResponse.json(chats)

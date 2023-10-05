@@ -9,21 +9,24 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { generalErrorToast } from "@/components/ui/use-toast";
 import WithLoading from "@/components/with-loading";
+import { useAgents } from "@/hooks/data/useAgents";
+import { useChats } from "@/hooks/data/useChats";
 
-import useBackendFetch from "@/hooks/useBackendFetch";
-import { AgentEntity, ChatEntity } from "@/lib/entities";
-import { backendFetch } from "@/utils/backendFetch";
+import { ChatEntity } from "@/lib/entities";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MessageSquarePlus } from "lucide-react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from 'zod'
 
 export default function ChatLayout(props: { children: React.ReactNode }) {
-  const { data: allChats, setData: setAllChats, error: allChatsError, isLoading: isAllChatsLoading } =
-    useBackendFetch<ChatEntity[]>('/chat')
-  const { data: agents } = useBackendFetch<AgentEntity[]>('/agents')
+  const allChats = useChats((state) => state.chats)
+  const chatsError = useChats((state) => state.chatsError)
+  const createChat = useChats((state) => state.createChat)
+
+  const agents = useAgents((state) => state.agents)
 
   const router = useRouter()
 
@@ -32,32 +35,21 @@ export default function ChatLayout(props: { children: React.ReactNode }) {
   const [searchChatName, setSearchChatName] = useState('')
   const [chats, setChats] = useState<ChatEntity[]>()
 
-  useEffect(() => setChats(allChats), [allChats])
   useEffect(() => {
     if (!searchChatName)
       setChats(allChats)
     else
       setChats(allChats?.filter(c => c.name.toLowerCase().includes(searchChatName.toLowerCase())))
-  }, [searchChatName])
+  }, [allChats, searchChatName])
 
   const handleChatCreate = (values: z.infer<typeof createChatSchema>) => {
     setIsLoading(true)
-    backendFetch('/chat', {
-      method: 'POST',
-      body: JSON.stringify(values)
-    })
-      .then(res => res.json())
-      .then(json => {
-        const newChat = json as ChatEntity
-        setSearchChatName('')
-        setAllChats([newChat, ...allChats ?? []])
+    createChat(values)
+      .then(newChatId => {
         setIsOpen(false)
-        router.push('/chat/' + newChat.chat_id)
+        router.push('/chat/' + newChatId)
       })
-      .catch(err => {
-        generalErrorToast()
-        console.error(`/chat\n${err}`)
-      })
+      .catch(err => { generalErrorToast() })
       .finally(() => setIsLoading(false))
   }
 
@@ -76,9 +68,11 @@ export default function ChatLayout(props: { children: React.ReactNode }) {
     resolver: zodResolver(createChatSchema),
   })
 
+  const chatId = usePathname().split('/').pop()
+
   return (
     <div className="flex w-full h-full">
-      <Sidebar className=" max-w-xs">
+      <Sidebar className="w-[20rem]">
         <div className="flex w-full gap-1 items-center mb-4">
           <Input
             placeholder="Search chat"
@@ -159,19 +153,37 @@ export default function ChatLayout(props: { children: React.ReactNode }) {
             </DialogContent>
           </Dialog>
         </div>
-        <WithLoading data={allChats} isLoading={isAllChatsLoading} error={allChatsError}>
+        <WithLoading data={allChats} error={chatsError}>
           <div className="flex flex-col gap-2">
             {chats?.map((c, idx) => (
-              <Button asChild variant='outline' className="justify-start" key={idx}>
-                <a href={`/chat/${c.chat_id}`}>{c.name}</a>
-              </Button>
+              <Chat chat={c} key={idx} />
             ))}
           </div>
         </WithLoading>
       </Sidebar>
-      <div className="max-w-6xl w-full mx-auto">
+      <div className="w-full mx-auto">
         {props.children}
       </div>
     </div>
+  )
+}
+
+function Chat({ chat }: { chat: ChatEntity }) {
+  return (
+    <Button asChild variant='outline' className="justify-between">
+      {/* <div> */}
+      <Link href={`/chat/${chat.chat_id}`}>{chat.name}</Link>
+      {/* <Dialog>
+          <DialogTrigger asChild>
+            <Button variant='outline'>
+              <Settings />
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+
+          </DialogContent>
+        </Dialog>
+      </div> */}
+    </Button>
   )
 }

@@ -31,7 +31,7 @@ export default function useFetch<T>(
     }
 
     fetchData()
-  }, [url])
+  }, [url, options])
 
   return { data, setData, error, isLoading }
 }
