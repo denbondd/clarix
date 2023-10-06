@@ -7,10 +7,10 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/components/ui/use-toast"
+import { generalErrorToast, toast } from "@/components/ui/use-toast"
+import { useFolders } from "@/hooks/data/useFolders"
 
-import { FileEntity, FolderEntity } from "@/lib/entities"
-import { backendFetch } from "@/utils/backendFetch"
+import { FolderEntity } from "@/lib/entities"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Pencil } from "lucide-react"
 import { useState } from "react"
@@ -18,56 +18,29 @@ import { useForm } from "react-hook-form"
 import * as z from 'zod'
 
 interface CreateDocuementsSectionProps {
-  folder: FolderEntity,
-  onCreate: (file: FileEntity) => void
+  folder: FolderEntity
 }
 
-export default function CreateDocuementsSection(props: CreateDocuementsSectionProps) {
+export default function CreateDocumentsSection(props: CreateDocuementsSectionProps) {
+  const createFile = useFolders((state) => state.createFile)
+
   const [openDialog, setOpenDialog] = useState(false)
-  const [isLoading, setIsloading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleCreateNewFile = (values: z.infer<typeof createDocSchema>) => {
-    setIsloading(true)
-    backendFetch('/kb/files', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: values.fileName,
-        content: values.content,
-        folderId: props.folder.folder_id
-      })
-    })
-      .then(res => res.json())
-      .then(json => {
-        const newFile = json as {
-          file_id: number;
-          name: string;
-          folder_id: number;
-          created_at: string;
-          edited_at: string;
-          content: string;
-        }
-        toast({
-          title: 'File was created!',
-          description: 'Now give us some time to learn it',
-          variant: 'default'
-        })
-        return backendFetch('/kb/files/' + newFile.file_id + '/embeddings', { method: 'PUT' })
-          .then(_ => {
-            props.onCreate({
-              file_id: newFile.file_id,
-              name: newFile.name,
-              created_at: newFile.created_at,
-              edited_at: newFile.edited_at,
-              folder_id: newFile.folder_id,
-              content: newFile.content,
-              _count: {
-                embeddings: 1 //more then 0, so learned
-              }
-            })
-            setOpenDialog(false)
-          })
-      })
-      .finally(() => setIsloading(false))
+    setIsLoading(true)
+    createFile({
+      content: values.content,
+      fileName: values.fileName,
+      folderId: props.folder.folder_id
+    }, () => toast({
+      title: 'File was created!',
+      description: 'Now give us some time to learn it',
+      variant: 'default'
+    }))
+      .then(_ => setOpenDialog(false))
+      .catch(_ => generalErrorToast())
+      .finally(() => setIsLoading(false))
   }
 
   const createDocSchema = z.object({

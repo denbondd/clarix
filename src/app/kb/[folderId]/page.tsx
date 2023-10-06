@@ -9,11 +9,11 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import FolderHeader from "./folder-header"
-import CreateDocuementsSection from "./create-documents-section"
+import CreateDocumentsSection from "./create-documents-section"
 import FileRow from "./file-row"
-import { FileEntity, FolderEntity } from "@/lib/entities"
+import { FileEntity } from "@/lib/entities"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog"
 import { DialogTrigger } from "@radix-ui/react-dialog"
 import { Button } from "@/components/ui/button"
@@ -32,17 +32,6 @@ export default function FolderElem({ params }: { params: { folderId: string } })
 
   const [changeFolderFile, setChangeFolderFile] = useState<FileEntity>()
   const [enteredFId, setEnteredFId] = useState('')
-
-  const handleOnFileCreate = (file: FileEntity) => {
-    // const newFolder: FolderEntity | undefined = folder ? {
-    //   name: folder.name,
-    //   created_at: folder.created_at,
-    //   folder_id: folder.folder_id,
-    //   user_id: folder.user_id,
-    //   files: folder.files.concat(file)
-    // } : undefined
-    // setFolder(newFolder)//TODO
-  }
 
   const handleChangeFolder = () => {
     if (!enteredFId) {
@@ -64,7 +53,7 @@ export default function FolderElem({ params }: { params: { folderId: string } })
         <div className="m-2 flex flex-col gap-4">
           <FolderHeader folder={folder} openAnyMenu={openAnyMenu} setOpenAnyMenu={setOpenAnyMenu} />
           <hr />
-          <CreateDocuementsSection onCreate={handleOnFileCreate} folder={folder} />
+          <CreateDocumentsSection folder={folder} />
 
           <div>
             <h4 className="text-xl font-semibold tracking-tight mb-2">Stored Documents</h4>

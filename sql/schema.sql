@@ -21,7 +21,7 @@ CREATE TABLE folders (
 CREATE TABLE files (
     file_id SERIAL PRIMARY KEY NOT NULL,
     name VARCHAR(255) NOT NULL,
-    folder_id INT NOT NULL REFERENCES folders(folder_id),
+    folder_id INT NOT NULL REFERENCES folders(folder_id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     edited_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	content VARCHAR(10485760) NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE embeddings (
     embedding_id SERIAL PRIMARY KEY NOT NULL,
     content VARCHAR(255) NOT NULL,
     embedding VECTOR(1536),
-    file_id INT NOT NULL REFERENCES files(file_id)
+    file_id INT NOT NULL REFERENCES files(file_id) ON DELETE CASCADE
 );
 
 -- Agents module
@@ -60,8 +60,8 @@ CREATE TABLE agent_has_folders (
 	agent_id INT NOT NULL,
     folder_id INT NOT NULL,
     PRIMARY KEY (agent_id, folder_id),
-    FOREIGN KEY (agent_id) REFERENCES agents(agent_id),
-    FOREIGN KEY (folder_id) REFERENCES folders(folder_id)
+    FOREIGN KEY (agent_id) REFERENCES agents(agent_id) ON DELETE CASCADE,
+    FOREIGN KEY (folder_id) REFERENCES folders(folder_id) ON DELETE CASCADE
 );
 
 -- Chat module

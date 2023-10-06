@@ -11,7 +11,15 @@ export async function GET() {
       name: true,
       user_id: true,
       created_at: true,
-      files: true
+      files: {
+        include: {
+          _count: {
+            select: {
+              embeddings: true
+            }
+          }
+        }
+      }
     },
     where: {
       user_id: {

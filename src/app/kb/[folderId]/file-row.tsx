@@ -6,23 +6,18 @@ import { MoreVertical } from "lucide-react"
 import { FileEntity } from "@/lib/entities"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { backendFetch } from "@/utils/backendFetch"
 import { generalErrorToast } from "@/components/ui/use-toast"
 import { DialogTrigger } from "@/components/ui/dialog"
 import ConfirmDialog from "@/components/confirm-dialog"
+import { useFolders } from "@/hooks/data/useFolders"
 
 export default function FileRow(props: { file: FileEntity, onChangeFolderClick: () => void }) {
   const router = useRouter()
 
+  const deleteFile = useFolders((state) => state.deleteFile)
   const handleDeleteFile = (): Promise<void> => {
-    return backendFetch('kb/files/' + props.file.file_id, {
-      method: 'DELETE'
-    })
-      .then(_ => window.location.reload())
-      .catch(err => {
-        console.error(`/kb/files/${props.file.file_id}\n${err}`)
-        generalErrorToast()
-      })
+    return deleteFile(props.file.file_id)
+      .catch(_ => { generalErrorToast() })
   }
 
   const getStatusBadge = (embeddingsCount: number) => {
@@ -46,7 +41,7 @@ export default function FileRow(props: { file: FileEntity, onChangeFolderClick: 
           className="rounded-r-none border-r-0"
           asChild
         >
-          <Link href={'/kb/files/' + props.file.file_id}>
+          <Link href={`/kb/${props.file.folder_id}/${props.file.file_id}`}>
             View
           </Link>
         </Button>
@@ -63,7 +58,7 @@ export default function FileRow(props: { file: FileEntity, onChangeFolderClick: 
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => router.push('/kb/files/' + props.file.file_id + '/edit')}>
+            <DropdownMenuItem onClick={() => router.push(`/kb/${props.file.folder_id}/${props.file.file_id}/edit`)}>
               Edit
             </DropdownMenuItem>
             <DialogTrigger asChild>

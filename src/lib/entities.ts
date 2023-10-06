@@ -4,7 +4,6 @@ export interface FileEntity {
   folder_id: number,
   created_at: string,
   edited_at: string,
-  content: string,
   _count: {
     embeddings: number;
   };

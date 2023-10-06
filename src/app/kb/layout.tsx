@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from "react";
-import { backendFetch } from "@/utils/backendFetch";
 
 import { generalErrorToast } from "@/components/ui/use-toast";
 import Sidebar from "@/components/sidebar";
@@ -18,16 +17,25 @@ import { LoadingButton } from "@/components/loading-button";
 import { useFolders } from "@/hooks/data/useFolders";
 import { FolderEntity } from "@/lib/entities";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import WithLoading from "@/components/with-loading";
 
 export default function KbLayout(props: { children: React.ReactNode }) {
   const allFolders = useFolders((state) => state.folders)
   const foldersError = useFolders((state) => state.foldersError)
+  const createFolder = useFolders((state) => state.createFolder)
+
+  const path = usePathname()
+  const [currentFolderId, setCurrentFolderId] = useState(-1)
+  useEffect(() => {
+    const pathParts = path.split('/')
+    setCurrentFolderId(pathParts.length == 2 ? -1 : Number.parseInt(pathParts[2]))
+  }, [path])
 
   const [searchFolderName, setSearchFolderName] = useState('')
   const [folders, setFolders] = useState<FolderEntity[]>()
   const [isAddBtnLoading, setIsAddBtnLoading] = useState(false)
+  const [openDialog, setOpenDialog] = useState(false)
 
   const router = useRouter()
 
@@ -40,24 +48,12 @@ export default function KbLayout(props: { children: React.ReactNode }) {
 
   const onSubmit = (values: z.infer<typeof createFolderSchema>) => {
     setIsAddBtnLoading(true)
-    return backendFetch('/kb/folders', {
-      method: 'POST',
-      body: JSON.stringify({ name: values.folderName })
-    })
-      .then(resp => resp.json())
-      .then(json => {
-        const newFold = (json as {
-          folder_id: number,
-          name: string,
-          user_id: string,
-          created_at: Date
-        })
-        router.push('/kb/' + newFold.folder_id)
+    createFolder(values.folderName)
+      .then(foldId => {
+        setOpenDialog(false)
+        router.push('/kb/' + foldId)
       })
-      .catch(err => {
-        console.error(err)
-        generalErrorToast()
-      })
+      .catch(_ => generalErrorToast())
       .finally(() => setIsAddBtnLoading(false))
   }
 
@@ -78,6 +74,11 @@ export default function KbLayout(props: { children: React.ReactNode }) {
     }
   })
 
+  const handleOpenChange = (open: boolean) => {
+    setOpenDialog(open)
+    form.reset()
+  }
+
   return (
     <div className="flex w-full h-full">
       <Sidebar className='max-w-xs'>
@@ -88,7 +89,7 @@ export default function KbLayout(props: { children: React.ReactNode }) {
             onChange={(inp) => setSearchFolderName(inp.target.value)}
           />
 
-          <Dialog onOpenChange={(_) => form.reset()}>
+          <Dialog open={openDialog} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
               <Button size='icon' className="flex-none">
                 <FolderPlus size={22} />
@@ -135,16 +136,25 @@ export default function KbLayout(props: { children: React.ReactNode }) {
         <div className=" flex flex-col gap-2">
           <WithLoading data={allFolders} error={foldersError}>
             {folders && folders.length === 0 && !searchFolderName && 'You have no folders yet(('}
-            {folders && folders.length > 0 && folders
-              .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
-              .map((f, idx) => (
-                <Button asChild variant='outline' className="justify-start" key={idx}>
-                  <Link href={'/kb/' + f.folder_id} className="flex justify-between">
-                    <div>{f.name}</div>
-                    <div>{f.files.length}</div>
-                  </Link>
-                </Button>
-              ))}
+            {folders && folders.length > 0 &&
+              <div className="flex flex-col gap-2">
+                {folders
+                  .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
+                  .map((f, idx) => (
+                    <Button
+                      key={idx}
+                      asChild
+                      variant={f.folder_id === currentFolderId ? 'secondary' : 'outline'}
+                      className="w-full justify-start border"
+                    >
+                      <Link href={'/kb/' + f.folder_id} className="flex justify-between">
+                        <div>{f.name}</div>
+                        <div>{f.files.length}</div>
+                      </Link>
+                    </Button>
+                  ))}
+              </div>
+            }
           </WithLoading>
         </div>
       </Sidebar>

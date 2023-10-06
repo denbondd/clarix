@@ -8,16 +8,16 @@ import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { auth } from "@clerk/nextjs";
 
-const vectorStore = PrismaVectorStore.withModel<embeddings>(prisma).create(new OpenAIEmbeddings(), {
-  prisma: Prisma,
-  tableName: 'embeddings',
-  vectorColumnName: 'embedding',
-  columns: {
-    embedding_id: PrismaVectorStore.IdColumn,
-    content: PrismaVectorStore.ContentColumn,
-    apartment_id: true
-  },
-})
+// const vectorStore = PrismaVectorStore.withModel<embeddings>(prisma).create(new OpenAIEmbeddings(), {
+//   prisma: Prisma,
+//   tableName: 'embeddings',
+//   vectorColumnName: 'embedding',
+//   columns: {
+//     embedding_id: PrismaVectorStore.IdColumn,
+//     content: PrismaVectorStore.ContentColumn,
+//     apartment_id: true
+//   },
+// })
 
 export async function PUT(req: NextRequest, { params }: { params: { fileId: string } }) {
   const fileId = Number.parseInt(params.fileId)
@@ -42,16 +42,17 @@ export async function PUT(req: NextRequest, { params }: { params: { fileId: stri
 
   const embContents = await splitter.splitText(file.content)
 
-  await vectorStore.addModels(
-    await prisma.$transaction(
-      embContents.map(c => prisma.embeddings.create({
-        data: {
-          content: c,
-          file_id: fileId,
-        }
-      }))
-    )
-  )
+  // TO AVOID BILLING WHILE TESTING
+  // await vectorStore.addModels(
+  //   await prisma.$transaction(
+  //     embContents.map(c => prisma.embeddings.create({
+  //       data: {
+  //         content: c,
+  //         file_id: fileId,
+  //       }
+  //     }))
+  //   )
+  // )
 
   return new NextResponse(null, { status: 204 })
 }

@@ -7,10 +7,11 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { DropdownMenu, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { generalErrorToast, toast } from "@/components/ui/use-toast"
+import { generalErrorToast } from "@/components/ui/use-toast"
+import { useFolders } from "@/hooks/data/useFolders"
 
-import { backendFetch } from "@/utils/backendFetch"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import * as z from 'zod'
@@ -22,36 +23,24 @@ interface FolderHeaderProps {
 }
 
 export default function FolderHeader(props: FolderHeaderProps) {
+  const deleteFolder = useFolders((state) => state.deleteFolder)
+  const renameFolder = useFolders((state) => state.renameFolder)
+
   const [isRenameBtnLoading, setIsRenameBtnLoading] = useState(false)
+  const [openDialog, setOpenDialog] = useState(false)
+  const router = useRouter()
 
   const handleFolderDelete = (): Promise<void> => {
-    return backendFetch('/kb/folders/' + props.folder.folder_id, {
-      method: 'DELETE',
-    })
-      .then(_ => { window.location.href = '/kb' })
-      .catch(err => {
-        console.error(`/kb/folders\n${err}`)
-        toast({
-          title: 'Something went wrong(',
-          description: 'Please, try again later',
-          variant: 'destructive',
-        })
-      })
+    return deleteFolder(props.folder.folder_id)
+      .then(_ => { router.push('/kb') })
+      .catch(_ => { generalErrorToast() })
   }
 
   const handleFolderRename = (values: z.infer<typeof folderRenameSchema>) => {
     setIsRenameBtnLoading(true)
-    backendFetch('/kb/folders/' + props.folder.folder_id, {
-      method: 'PUT',
-      body: JSON.stringify({
-        name: values?.folderName
-      })
-    })
-      .then(_ => { window.location.reload() })
-      .catch(err => {
-        console.error(`/kb/folders\n${err}`)
-        generalErrorToast()
-      })
+    renameFolder(props.folder.folder_id, values.folderName)
+      .then(_ => setOpenDialog(false))
+      .catch(_ => generalErrorToast())
       .finally(() => setIsRenameBtnLoading(false))
   }
 
@@ -72,10 +61,16 @@ export default function FolderHeader(props: FolderHeaderProps) {
     }
   })
 
+  const handleOpenChange = (open: boolean) => {
+    form.reset()
+    setOpenDialog(open)
+  }
+
   const deleteDialogDescription =
     'Are you sure you want to delete folder ' + props.folder.name +
     '? You will lost all your files and could not recover them ' +
-    'unless you have a local copy.'
+    'unless you have a local copy. \nAll agents will forget about ' +
+    'this folder, however, you won\'t loose your chats'
   return (
     <DropdownMenu open={props.openAnyMenu} onOpenChange={props.setOpenAnyMenu}>
       <DropdownMenuTrigger className="w-max">
@@ -87,7 +82,7 @@ export default function FolderHeader(props: FolderHeaderProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent>
 
-        <Dialog onOpenChange={() => form.reset()}>
+        <Dialog open={openDialog} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
               Rename
