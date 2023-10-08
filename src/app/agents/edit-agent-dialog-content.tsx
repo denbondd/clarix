@@ -106,167 +106,165 @@ export default function EditAgentDialogContent(props: EditAgentDialogContentProp
           Configure your new Agent for your needs. You can edit all parameters later if you wish
         </DialogDescription>
       </DialogHeader>
-      <TooltipProvider delayDuration={300}>
-        <ScrollArea className="h-[60vh]">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} id="agentForm">
-              <div className="flex flex-col gap-2">
-                <Separator />
-                <div className="flex gap-2 items-center">
-                  <div className="font-semibold">
-                    Private parameters
-                  </div>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info size={18} />
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-sm">
-                      {"These parameters are solely for Agent's identification. They will not" +
-                        "affect your agent's behaviour and only you will see it"}
-                    </TooltipContent>
-                  </Tooltip>
+      <ScrollArea className="h-[60vh]">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} id="agentForm">
+            <div className="flex flex-col gap-2">
+              <Separator />
+              <div className="flex gap-2 items-center">
+                <div className="font-semibold">
+                  Private parameters
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Agent name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Name..." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Description..." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Separator />
-                <div className="flex gap-2 items-center">
-                  <div className="font-semibold">
-                    Behavioral parameters
-                  </div>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info size={18} />
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs">
-                      {"These parameters will affect your agent's behaviour"}
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="folderIds"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Folders, which Agent will know</FormLabel>
-                      <FormControl>
-                        <ComboboxMultiselect<number>
-                          elements={props.folders?.map(f => {
-                            return {
-                              value: f.folder_id,
-                              label: f.name
-                            }
-                          }) ?? []}
-                          btnTriggerText="Select folders"
-                          noFoundText="Folder not found"
-                          placeholder="Select folders..."
-                          allSelectedText="You selected all your folders"
-                          onSelectedChange={values => form.setValue("folderIds", values as [number, ...number[]])}
-                          selectedValues={field.value ?? []}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="modelId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Model</FormLabel>
-                      <FormControl>
-                        <Select
-                          value={props.models?.find(m => m.model_id === field.value)?.model_id.toString()}
-                          onValueChange={value => form.setValue('modelId', Number.parseInt(value))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder={<div className="text-muted-foreground">AI model...</div>} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {props.models?.map(m => (
-                              <SelectItem
-                                key={m.model_id}
-                                value={m.model_id.toString()}
-                              >
-                                {m.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="systemPrompt"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>System Prompt</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="System Prompt..." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="temperature"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        <div className="flex gap-2 items-center mb-2">
-                          <Label>Temperature</Label>
-                          {field.value / 10}
-                        </div>
-                      </FormLabel>
-                      <FormControl>
-                        <Slider
-                          value={[field.value]}
-                          onValueChange={v => form.setValue('temperature', v[0])}
-                          max={20}
-                          step={1}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info size={18} />
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-sm">
+                    {"These parameters are solely for Agent's identification. They will not" +
+                      "affect your agent's behaviour and only you will see it"}
+                  </TooltipContent>
+                </Tooltip>
               </div>
-            </form>
-          </Form>
-        </ScrollArea>
-      </TooltipProvider>
+
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Agent name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Name..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Description..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Separator />
+              <div className="flex gap-2 items-center">
+                <div className="font-semibold">
+                  Behavioral parameters
+                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info size={18} />
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs">
+                    {"These parameters will affect your agent's behaviour"}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="folderIds"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Folders, which Agent will know</FormLabel>
+                    <FormControl>
+                      <ComboboxMultiselect<number>
+                        elements={props.folders?.map(f => {
+                          return {
+                            value: f.folder_id,
+                            label: f.name
+                          }
+                        }) ?? []}
+                        btnTriggerText="Select folders"
+                        noFoundText="Folder not found"
+                        placeholder="Select folders..."
+                        allSelectedText="You selected all your folders"
+                        onSelectedChange={values => form.setValue("folderIds", values as [number, ...number[]])}
+                        selectedValues={field.value ?? []}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="modelId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Model</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={props.models?.find(m => m.model_id === field.value)?.model_id.toString()}
+                        onValueChange={value => form.setValue('modelId', Number.parseInt(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={<div className="text-muted-foreground">AI model...</div>} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {props.models?.map(m => (
+                            <SelectItem
+                              key={m.model_id}
+                              value={m.model_id.toString()}
+                            >
+                              {m.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="systemPrompt"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>System Prompt</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="System Prompt..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="temperature"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <div className="flex gap-2 items-center mb-2">
+                        <Label>Temperature</Label>
+                        {field.value / 10}
+                      </div>
+                    </FormLabel>
+                    <FormControl>
+                      <Slider
+                        value={[field.value]}
+                        onValueChange={v => form.setValue('temperature', v[0])}
+                        max={20}
+                        step={1}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+            </div>
+          </form>
+        </Form>
+      </ScrollArea>
       <DialogFooter>
         <DialogTrigger asChild>
           <Button variant='secondary'>

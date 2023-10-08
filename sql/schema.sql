@@ -83,7 +83,7 @@ CREATE TABLE messages (
     chat_id INT NOT NULL REFERENCES chats(chat_id),
     role_id INT NOT NULL REFERENCES msg_roles(msg_role_id),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    content VARCHAR(1024) NOT NULL
+    content TEXT NOT NULL
 );
 
 CREATE TABLE msg_sources (

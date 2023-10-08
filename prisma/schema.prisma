@@ -81,7 +81,7 @@ model messages {
   chat_id     Int
   role_id     Int
   created_at  DateTime      @default(now()) @db.Timestamptz(6)
-  content     String        @db.VarChar(1024)
+  content     String        @db.Text
   chats       chats         @relation(fields: [chat_id], references: [chat_id], onDelete: NoAction, onUpdate: NoAction)
   msg_roles   msg_roles     @relation(fields: [role_id], references: [msg_role_id], onDelete: NoAction, onUpdate: NoAction)
   msg_sources msg_sources[]

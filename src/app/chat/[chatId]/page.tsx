@@ -1,62 +1,109 @@
 'use client'
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import useBackendFetch from "@/hooks/useBackendFetch"
-import { FullChatEntity } from "@/lib/entities"
-import { SendHorizonal } from "lucide-react"
 import { useEffect, useRef } from "react"
 import { useChat } from "ai/react"
-import path from "path"
+import { useUser } from "@clerk/nextjs"
+import type { UserResource } from '@clerk/types';
+import WithLoading from "@/components/with-loading"
+import Image from "next/image"
+import { LogoIcon } from "@/components/ui/icons/icons"
+import { Message } from "ai"
+import { useChats } from "@/hooks/data/useChats"
+import PromptInput from "./prompt-input"
 
 export default function Chat({ params }: { params: { chatId: string } }) {
-  const { data: chatData, error, isLoading } = useBackendFetch<FullChatEntity>('/chat/' + params.chatId)
-  useEffect(() => setMessages(chatData?.messages.map(msg => {
-    return {
-      id: msg.message_id.toString(),
-      content: msg.content,
-      role: msg.msg_roles.name as 'user' | 'assistant',
-      createdAt: msg.created_at,
-    }
-  }) ?? []), [chatData])
+  const chatId = Number.parseInt(params.chatId)
 
-  const { messages, setMessages, handleInputChange, input, handleSubmit } = useChat({
-    api: path.join(process.env.NEXT_PUBLIC_BACKEND_URL ?? '', '/chat/') + params.chatId,
+  const { user, isLoaded, isSignedIn } = useUser()
+  const fetchMessages = useChats((state) => state.fetchMessages)
+  const fetchMessagesError = useChats((state) => state.chatsError)
+  const chatData = useChats((state) => state.chats)?.find(c => c.chat_id === chatId)
+
+  useEffect(() => {
+    fetchMessages(chatId)
+  }, [chatId])
+
+  useEffect(() => {
+    if (chatData && chatData.messages) {
+      console.log('after after')
+      setMessages(chatData.messages.map(msg => {
+        return {
+          id: msg.message_id.toString(),
+          content: msg.content,
+          role: msg.msg_roles.name as 'user' | 'assistant',
+          createdAt: msg.created_at,
+        }
+      }))
+    }
+  }, [chatData])
+
+  const { messages, setMessages, handleInputChange, input, handleSubmit, reload, stop, isLoading, append } = useChat({
+    api: process.env.NEXT_PUBLIC_BACKEND_URL + '/chat/' + params.chatId,
     id: params.chatId,
+    onFinish: () => {
+      fetchMessages(chatId)
+    }
   })
 
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (messages && messages.length) {
-      ref.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "end"
-      })
-    }
-  }, [messages])
+    ref.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end"
+    })
+  }, [messages, params])
 
   return (
-    <div className="flex-1">
-      <ScrollArea className="h-[calc(100vh-120px)]">
-        {messages.map(v =>
-          <div className="mt-2 w-[50vw] rounded-md bg-slate-950 text-white p-4">
-            {v.content}
-          </div>)}
-        <div ref={ref} />
+    <div className="relative flex h-full flex-col flex-flow">
+      <ScrollArea className="h-[calc(100vh-200px)]">
+        <WithLoading data={user && chatData} error={!isSignedIn && fetchMessagesError} isLoading={!isLoaded && !chatData?.messages}>
+          {messages.map(msg => (
+            <Message key={msg.id} msg={msg} user={user as UserResource} />
+          ))}
+          {/* {chatData?.messages.map(msg => (
+            <div>{msg.}</div>
+          ))} */}
+          <div ref={ref} />
+        </WithLoading>
       </ScrollArea>
 
-      <form onSubmit={handleSubmit} className="flex w-full items-center gap-2 mb-2 px-4">
-        <Input
-          className="py-6"
-          placeholder="Send a message"
-          value={input}
-          onChange={handleInputChange}
-        />
-        <Button className="h-12 w-12 p-0" type="submit">
-          <SendHorizonal size={20} />
-        </Button>
-      </form>
+      <PromptInput
+        isLoading={isLoading}
+        stop={stop}
+        messages={messages}
+        reload={reload}
+        input={input}
+        handleInputChange={handleInputChange}
+        handleSubmit={handleSubmit}
+      />
+    </div>
+  )
+}
+
+function Message({ msg, user }: { user: UserResource, msg: Message }) {
+  return (
+    <div className={"p-4 flex justify-center w-full " + (msg.role === 'user' ? 'bg-background' : 'bg-secondary')}>
+      <div className="max-w-5xl w-full flex gap-4 items-start">
+        <div className="flex-none rounded-md overflow-hidden sticky top-2">
+          {msg.role === 'user' ?
+            <Image
+              src={user.imageUrl}
+              alt="avatar"
+              width={36}
+              height={36}
+            />
+            :
+            <div className="w-9 h-9 bg-primary flex items-center justify-center">
+              <LogoIcon size={24} color="hsl(var(--primary-foreground))" />
+            </div>
+          }
+        </div>
+        {msg.content}
+      </div>
+      <div>
+        {/*sources*/}
+      </div>
     </div>
   )
 }

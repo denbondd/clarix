@@ -40,6 +40,9 @@ export async function GET(req: NextRequest, { params }: { params: { chatId: stri
           },
         }
       },
+    },
+    orderBy: {
+      created_at: "asc"
     }
   })
 

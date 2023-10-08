@@ -1,13 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
-import { ChatOpenAI, PromptLayerChatOpenAI } from "langchain/chat_models/openai"
-import { AIMessage, HumanMessage, SystemMessage } from "langchain/schema"
 import { PromptTemplate } from "langchain/prompts"
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
-import { LangChainStream, Message, StreamingTextResponse } from 'ai';
-import { BytesOutputParser } from 'langchain/schema/output_parser';
+import OpenAI from 'openai';
+import { Message, OpenAIStream, StreamingTextResponse } from 'ai';
 
 const prompt = PromptTemplate.fromTemplate(
   `Context:
@@ -23,30 +21,30 @@ export async function POST(req: NextRequest, { params }: { params: { chatId: str
 
   const allMessages: Message[] = (await req.json()).messages ?? []
 
-  const chat = await prisma.chats.findFirst({
-    where: {
-      user_id: userId as string,
-      chat_id: chatId
-    },
-    select: {
-      chat_id: true,
-      agent_id: true,
-    }
-  })
-  const agent = await prisma.agents.findFirst({
-    where: {
-      user_id: userId as string,
-      agent_id: chat?.agent_id
-    },
-    select: {
-      system_prompt: true,
-      temperature: true,
-      models: true
-    }
-  })
-  if (!chat || !agent) {
-    return new NextResponse(null, { status: 400 })
-  }
+  // const chat = await prisma.chats.findFirst({
+  //   where: {
+  //     user_id: userId as string,
+  //     chat_id: chatId
+  //   },
+  //   select: {
+  //     chat_id: true,
+  //     agent_id: true,
+  //   }
+  // })
+  // const agent = await prisma.agents.findFirst({
+  //   where: {
+  //     user_id: userId as string,
+  //     agent_id: chat?.agent_id
+  //   },
+  //   select: {
+  //     system_prompt: true,
+  //     temperature: true,
+  //     models: true
+  //   }
+  // })
+  // if (!chat || !agent) {
+  //   return new NextResponse(null, { status: 400 })
+  // }
 
   // const embeddingModel = new OpenAIEmbeddings()
   // const questionEmb = await embeddingModel.embedQuery(question)
@@ -67,10 +65,8 @@ export async function POST(req: NextRequest, { params }: { params: { chatId: str
   //   LIMIT 5;
   // `
 
-  const chatModel = new PromptLayerChatOpenAI({
-    temperature: agent.temperature / 10,
-    modelName: agent.models.tech_name,
-    streaming: true
+  const chatModel = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
   })
 
   await prisma.messages.create({
@@ -81,7 +77,14 @@ export async function POST(req: NextRequest, { params }: { params: { chatId: str
     }
   })
 
-  const { stream, handlers } = LangChainStream({
+  const response = await chatModel.chat.completions.create({
+    messages: allMessages,
+    // model: agent.models.tech_name,
+    model: 'gpt-3.5-turbo',
+    stream: true
+  })
+
+  const stream = OpenAIStream(response, {
     async onCompletion(completion) {
       await prisma.messages.create({
         data: {
@@ -91,15 +94,7 @@ export async function POST(req: NextRequest, { params }: { params: { chatId: str
         }
       })
     },
-  });
-
-  chatModel.call(
-    allMessages.map(m =>
-      m.role == 'user'
-        ? new HumanMessage(m.content)
-        : new AIMessage(m.content),
-    ), {}, [handlers]
-  )
+  })
 
   return new StreamingTextResponse(stream)
 }

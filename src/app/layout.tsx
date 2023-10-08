@@ -5,6 +5,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import Toolbar from './toolbar'
 import { Toaster } from '@/components/ui/toaster'
 import { ThemeProvider } from '@/components/theme-provider'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -28,15 +29,17 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <div className='flex flex-col max-w-[100rem] min-h-screen m-auto px-2'>
-              <div>
-                <Toolbar />
+            <TooltipProvider>
+              <div className='flex flex-col max-w-[100rem] min-h-screen m-auto'>
+                <div>
+                  <Toolbar />
+                </div>
+                <div className='flex-1'>
+                  {children}
+                </div>
               </div>
-              <div className='flex-1'>
-                {children}
-              </div>
-            </div>
-            <Toaster />
+              <Toaster />
+            </TooltipProvider>
           </ThemeProvider>
         </body>
       </html>

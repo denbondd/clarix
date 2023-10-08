@@ -1,5 +1,5 @@
 
-import { ChatEntity, FullChatEntity } from "@/lib/entities";
+import { ChatEntity, FullChatEntity, MessageEntity } from "@/lib/entities";
 import { backendFetch } from "@/utils/backendFetch";
 import { create } from "zustand";
 import { fetchStateData } from "./common";
@@ -44,7 +44,6 @@ export const useChats = create<ChatsState>((set, get) => ({
   fetchMessagesError: false,
   fetchMessages: (chatId) => {
     const chatData = get().chats?.find(c => c.chat_id === chatId)
-    console.log(chatData)
 
     if (chatData?.messages) {
       return { isLoading: false, error: false }
@@ -52,16 +51,9 @@ export const useChats = create<ChatsState>((set, get) => ({
 
     fetchStateData(
       `/chat/${chatId}/messages`,
-      json => ({ chats: updatedChats(get, chatId, json) }),
+      json => set({ chats: updatedChatWithMessages(get, chatId, json) }),
       err => set({ fetchMessagesError: true })
-    )
-    // backendFetch(`/chat/${chatId}/messages`)
-    //   .then(res => res.json())
-    //   .then(json => {
-    //     const newChat = json as FullChatEntity
-    //     set({ chats: updatedChats(get, chatId, newChat) })
-    //   })
-    //   .catch(err => set({ fetchMessagesError: true }))
+    )()
   }
 }))
 
@@ -71,8 +63,12 @@ fetchStateData(
   error => useChats.setState({ chatsError: error })
 )()
 
-const updatedChats = (get: () => ChatsState, chatId: number, newChat: FullChatEntity): FullChatEntity[] | undefined => {
-  console.log(get().chats)
-
-  return get().chats?.map(c => c.chat_id === chatId ? newChat : c)
+const updatedChatWithMessages = (get: () => ChatsState, chatId: number, messages: MessageEntity[]): FullChatEntity[] | undefined => {
+  return get().chats?.map(c => c.chat_id === chatId ? {
+    agents: c.agents,
+    chat_id: c.chat_id,
+    name: c.name,
+    user_id: c.user_id,
+    messages: messages
+  } : c)
 }

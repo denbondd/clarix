@@ -30,6 +30,13 @@ export default function ChatLayout(props: { children: React.ReactNode }) {
 
   const router = useRouter()
 
+  const path = usePathname()
+  const [currentChatId, setCurrentChatId] = useState(-1)
+  useEffect(() => {
+    const pathParts = path.split('/')
+    setCurrentChatId(pathParts.length == 2 ? -1 : Number.parseInt(pathParts[2]))
+  }, [path])
+
   const [isLoading, setIsLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [searchChatName, setSearchChatName] = useState('')
@@ -156,7 +163,7 @@ export default function ChatLayout(props: { children: React.ReactNode }) {
         <WithLoading data={allChats} error={chatsError}>
           <div className="flex flex-col gap-2">
             {chats?.map((c, idx) => (
-              <Chat chat={c} key={idx} />
+              <Chat chat={c} key={idx} currentChatId={currentChatId} />
             ))}
           </div>
         </WithLoading>
@@ -168,9 +175,13 @@ export default function ChatLayout(props: { children: React.ReactNode }) {
   )
 }
 
-function Chat({ chat }: { chat: ChatEntity }) {
+function Chat({ chat, currentChatId }: { chat: ChatEntity, currentChatId: number }) {
   return (
-    <Button asChild variant='outline' className="justify-between">
+    <Button 
+      asChild 
+      variant={chat.chat_id === currentChatId ? 'secondary' : 'outline'}
+      className="justify-between"
+    >
       {/* <div> */}
       <Link href={`/chat/${chat.chat_id}`}>{chat.name}</Link>
       {/* <Dialog>
