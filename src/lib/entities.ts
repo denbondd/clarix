@@ -51,10 +51,7 @@ export interface MessageEntity {
   message_id: number,
   created_at: Date,
   content: string,
-  msg_roles: {
-    msg_role_id: number,
-    name: string,
-  },
+  role: 'user' | 'assistant' | 'system',
   msg_sources: {
     embedding_id: number,
     similarity: number,

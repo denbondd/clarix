@@ -1,5 +1,7 @@
+import { MessageEntity } from "@/lib/entities"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@clerk/nextjs"
+import { PrismaClient } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(req: NextRequest, { params }: { params: { chatId: string } }) {
@@ -7,6 +9,12 @@ export async function GET(req: NextRequest, { params }: { params: { chatId: stri
 
   const chatId = Number.parseInt(params.chatId)
 
+  const parsedMessages = await getParsedMessages(prisma, userId, chatId)
+
+  return NextResponse.json(parsedMessages)
+}
+
+export async function getParsedMessages(prisma: PrismaClient, userId: string | null, chatId: number): Promise<MessageEntity[]> {
   const messages = await prisma.messages.findMany({
     where: {
       chats: {
@@ -46,41 +54,30 @@ export async function GET(req: NextRequest, { params }: { params: { chatId: stri
     }
   })
 
-  const parsedMessages: {
-    message_id: number,
-    created_at: Date,
-    content: string,
-    msg_roles: {
-      msg_role_id: number,
-      name: string,
-    },
-    msg_sources: {
-      embedding_id: number,
-      similarity: number,
-      content: string;
-      file_name: string,
-      folder_name: string
-    }[]
-  }[] = messages.map(msg => {
+  const parsedMessages: MessageEntity[] = messages.map(msg => {
     return {
       message_id: msg.message_id,
       created_at: msg.created_at,
       content: msg.content,
-      msg_roles: {
-        msg_role_id: msg.msg_roles.msg_role_id,
-        name: msg.msg_roles.name,
-      },
-      msg_sources: msg.msg_sources.map(s => {
-        return {
-          embedding_id: s.embedding_id,
-          similarity: s.similarity,
-          content: s.embeddings.content,
-          file_name: s.embeddings.files.name,
-          folder_name: s.embeddings.files.folders.name
-        }
-      })
+      role: msg.msg_roles.name as 'user' | 'assistant' | 'system',
+      msg_sources: [{
+        content: 'test source',
+        embedding_id: 123,
+        file_name: 'haha.txt',
+        folder_name: 'hafold',
+        similarity: 0.81
+      }]
+      // msg_sources: msg.msg_sources.map(s => {
+      //   return {
+      //     embedding_id: s.embedding_id,
+      //     similarity: s.similarity,
+      //     content: s.embeddings.content,
+      //     file_name: s.embeddings.files.name,
+      //     folder_name: s.embeddings.files.folders.name
+      //   }
+      // })
     }
   })
 
-  return NextResponse.json(parsedMessages)
+  return parsedMessages
 }

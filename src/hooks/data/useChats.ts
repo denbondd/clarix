@@ -10,7 +10,7 @@ interface ChatsState {
   createChat: (chatData: { name: string, agentId: number }) => Promise<number>,
   // setMessages: (chatId: number, messages: MessageEntity[]) => void,
   fetchMessagesError: boolean,
-  fetchMessages: (chatId: number) => void
+  fetchMessages: (chatId: number) => Promise<void>
 }
 
 export const useChats = create<ChatsState>((set, get) => ({
@@ -45,11 +45,11 @@ export const useChats = create<ChatsState>((set, get) => ({
   fetchMessages: (chatId) => {
     const chatData = get().chats?.find(c => c.chat_id === chatId)
 
-    if (chatData?.messages) {
-      return { isLoading: false, error: false }
-    }
+    // if (chatData?.messages) {
+    //   return Promise.resolve()
+    // }
 
-    fetchStateData(
+    return fetchStateData(
       `/chat/${chatId}/messages`,
       json => set({ chats: updatedChatWithMessages(get, chatId, json) }),
       err => set({ fetchMessagesError: true })

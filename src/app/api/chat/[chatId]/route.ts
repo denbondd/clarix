@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import { PromptTemplate } from "langchain/prompts"
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import OpenAI from 'openai';
 import { Message, OpenAIStream, StreamingTextResponse } from 'ai';
+import { getParsedMessages } from "./messages/route";
+import { MessageEntity } from "@/lib/entities";
 
 const prompt = PromptTemplate.fromTemplate(
   `Context:
@@ -19,32 +21,41 @@ export async function POST(req: NextRequest, { params }: { params: { chatId: str
   const { userId } = auth()
   const chatId = Number.parseInt(params.chatId)
 
-  const allMessages: Message[] = (await req.json()).messages ?? []
+  const providedMessages: MessageEntity[] = (await req.json()).messages ?? []
 
-  // const chat = await prisma.chats.findFirst({
-  //   where: {
-  //     user_id: userId as string,
-  //     chat_id: chatId
-  //   },
-  //   select: {
-  //     chat_id: true,
-  //     agent_id: true,
-  //   }
-  // })
-  // const agent = await prisma.agents.findFirst({
-  //   where: {
-  //     user_id: userId as string,
-  //     agent_id: chat?.agent_id
-  //   },
-  //   select: {
-  //     system_prompt: true,
-  //     temperature: true,
-  //     models: true
-  //   }
-  // })
-  // if (!chat || !agent) {
-  //   return new NextResponse(null, { status: 400 })
+  const chat = await prisma.chats.findFirst({
+    where: {
+      user_id: userId as string,
+      chat_id: chatId
+    },
+    select: {
+      chat_id: true,
+      agent_id: true,
+    }
+  })
+  const agent = await prisma.agents.findFirst({
+    where: {
+      user_id: userId as string,
+      agent_id: chat?.agent_id
+    },
+    select: {
+      system_prompt: true,
+      temperature: true,
+      models: true
+    }
+  })
+  if (!chat || !agent) {
+    return new NextResponse(null, { status: 400 })
+  }
+
+  // const history = getParsedMessages(prisma, userId, chatId)
+
+  // if (providedMessages[providedMessages.length - 1].role === 'assistant') {
+  //   // regenerate
+  // } else if (providedMessages[providedMessages.length - 1].role === 'user') {
+  //   // 
   // }
+  // return new NextResponse()
 
   // const embeddingModel = new OpenAIEmbeddings()
   // const questionEmb = await embeddingModel.embedQuery(question)
@@ -69,16 +80,26 @@ export async function POST(req: NextRequest, { params }: { params: { chatId: str
     apiKey: process.env.OPENAI_API_KEY,
   })
 
-  await prisma.messages.create({
-    data: {
-      content: allMessages[allMessages.length - 1].content,
-      chat_id: chatId,
-      role_id: 2
-    }
-  })
+  // console.log(providedMessages)
+  // return new NextResponse()
+
+  const lastMessage = providedMessages[providedMessages.length - 1]
+  if (lastMessage.message_id < 0)
+    await prisma.messages.create({
+      data: {
+        content: lastMessage.content,
+        chat_id: chatId,
+        role_id: 2
+      }
+    })
 
   const response = await chatModel.chat.completions.create({
-    messages: allMessages,
+    messages: providedMessages.map(msg => {
+      return {
+        content: msg.content,
+        role: msg.role,
+      }
+    }),
     // model: agent.models.tech_name,
     model: 'gpt-3.5-turbo',
     stream: true
@@ -93,6 +114,15 @@ export async function POST(req: NextRequest, { params }: { params: { chatId: str
           role_id: 3
         }
       })
+    },
+    onFinal(completion) {
+      console.log(`onFinal: ${completion}`)
+    },
+    onToken(token) {
+      console.log(`onToken: ${token}`)
+    },
+    onStart() {
+      console.log('onStart')
     },
   })
 
