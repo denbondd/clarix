@@ -58,7 +58,7 @@ model files {
   folder_id  Int
   created_at DateTime     @default(now()) @db.Timestamptz(6)
   edited_at  DateTime     @default(now()) @db.Timestamptz(6)
-  content    String       @db.VarChar(10485760)
+  content    String       @db.Text
   embeddings embeddings[]
   folders    folders      @relation(fields: [folder_id], references: [folder_id], onDelete: NoAction, onUpdate: NoAction)
 

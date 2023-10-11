@@ -24,13 +24,13 @@ CREATE TABLE files (
     folder_id INT NOT NULL REFERENCES folders(folder_id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     edited_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	content VARCHAR(10485760) NOT NULL,
+	content TEXT NOT NULL,
 	UNIQUE(folder_id, name)
 );
 
 CREATE TABLE embeddings (
     embedding_id SERIAL PRIMARY KEY NOT NULL,
-    content VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
     embedding VECTOR(1536),
     file_id INT NOT NULL REFERENCES files(file_id) ON DELETE CASCADE
 );

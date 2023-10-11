@@ -60,22 +60,15 @@ export async function getParsedMessages(prisma: PrismaClient, userId: string | n
       created_at: msg.created_at,
       content: msg.content,
       role: msg.msg_roles.name as 'user' | 'assistant' | 'system',
-      msg_sources: [{
-        content: 'test source',
-        embedding_id: 123,
-        file_name: 'haha.txt',
-        folder_name: 'hafold',
-        similarity: 0.81
-      }]
-      // msg_sources: msg.msg_sources.map(s => {
-      //   return {
-      //     embedding_id: s.embedding_id,
-      //     similarity: s.similarity,
-      //     content: s.embeddings.content,
-      //     file_name: s.embeddings.files.name,
-      //     folder_name: s.embeddings.files.folders.name
-      //   }
-      // })
+      msg_sources: msg.msg_sources.map(s => {
+        return {
+          embedding_id: s.embedding_id,
+          similarity: s.similarity,
+          content: s.embeddings.content,
+          file_name: s.embeddings.files.name,
+          folder_name: s.embeddings.files.folders.name
+        }
+      })
     }
   })
 

@@ -102,25 +102,31 @@ export function useChatHelper({
     }
   }
 
-  const submit = async () => {
+  const submit = async (needToAppendInput: boolean) => {
     setIsLoading(true)
     const userInput = input
     setInput('')
 
-    const msgsWithInput = [...messages, {
-      content: userInput,
-      created_at: new Date(),
-      message_id: -1,
-      role: 'user',
-      msg_sources: []
-    }]
+    let msgsToUse: MessageEntity[]
 
-    mutateMessages(msgsWithInput)
+    if (needToAppendInput) {
+      const msgsWithInput = [...messages, {
+        content: userInput,
+        created_at: new Date(),
+        message_id: -1,
+        role: 'user',
+        msg_sources: []
+      }]
+      mutateMessages(msgsWithInput)
+      msgsToUse = msgsWithInput
+    } else {
+      msgsToUse = messages
+    }
 
     try {
       await getStreamedResponse(
         api,
-        msgsWithInput,
+        msgsToUse,
         mutateMessages,
         stop
       )
@@ -136,7 +142,7 @@ export function useChatHelper({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    submit()
+    submit(true)
   }
 
   const handleStop = () => {
@@ -144,7 +150,7 @@ export function useChatHelper({
   }
 
   const handleReload = () => {
-
+    submit(false)
   }
 
   const handleInputChange = (e: any) => {
