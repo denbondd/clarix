@@ -91,6 +91,6 @@ CREATE TABLE msg_sources (
     embedding_id INT NOT NULL,
     similarity DOUBLE PRECISION NOT NULL,
     PRIMARY KEY (message_id, embedding_id),
-    FOREIGN KEY (message_id) REFERENCES messages(message_id),
-    FOREIGN KEY (embedding_id) REFERENCES embeddings(embedding_id)
+    FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE,
+    FOREIGN KEY (embedding_id) REFERENCES embeddings(embedding_id) ON DELETE CASCADE
 );

@@ -47,18 +47,20 @@ export interface ChatEntity {
   };
 }
 
+export interface MessageSource {
+  embedding_id: number,
+  similarity: number,
+  content: string;
+  file_name: string,
+  folder_name: string
+}
+
 export interface MessageEntity {
   message_id: number,
   created_at: Date,
   content: string,
   role: 'user' | 'assistant' | 'system',
-  msg_sources: {
-    embedding_id: number,
-    similarity: number,
-    content: string;
-    file_name: string,
-    folder_name: string
-  }[]
+  msg_sources: MessageSource[]
 }
 
 export interface FullChatEntity extends ChatEntity {

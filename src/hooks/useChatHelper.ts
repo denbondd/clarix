@@ -34,7 +34,7 @@ export function useChatHelper({
   const chatData = useChats((state) => state.chats?.find(c => c.chat_id === chatId))
   const fetchMessages = useChats((state) => state.fetchMessages)
 
-  const { data: messages, mutate: mutateMessages } = useSWR([basePath, chatId], {
+  const { data: messages, mutate: mutateMessages } = useSWR<MessageEntity[]>([basePath, chatId], {
     fallbackData: []
   })
   const stop = useRef(false)
@@ -102,31 +102,35 @@ export function useChatHelper({
     }
   }
 
-  const submit = async (needToAppendInput: boolean) => {
+  const submit = async (messages: MessageEntity[] | undefined, needToAppendInput: boolean) => {
     setIsLoading(true)
-    const userInput = input
-    setInput('')
 
-    let msgsToUse: MessageEntity[]
+    let msgsToUse: MessageEntity[] | undefined
 
     if (needToAppendInput) {
-      const msgsWithInput = [...messages, {
+      const userInput = input
+      setInput('')
+
+      const msgsWithInput = [...messages ?? [], {
         content: userInput,
         created_at: new Date(),
         message_id: -1,
         role: 'user',
         msg_sources: []
-      }]
+      }] as MessageEntity[]
       mutateMessages(msgsWithInput)
       msgsToUse = msgsWithInput
     } else {
       msgsToUse = messages
     }
 
+    console.log('sentMessages')
+    console.log(msgsToUse)
+
     try {
       await getStreamedResponse(
         api,
-        msgsToUse,
+        msgsToUse ?? [],
         mutateMessages,
         stop
       )
@@ -142,7 +146,7 @@ export function useChatHelper({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    submit(true)
+    submit(messages, true)
   }
 
   const handleStop = () => {
@@ -150,7 +154,14 @@ export function useChatHelper({
   }
 
   const handleReload = () => {
-    submit(false)
+    let msgsToUse
+    if (messages && messages[messages.length - 1].role === 'assistant') {
+      msgsToUse = messages.slice(0, messages.length - 1)
+      mutateMessages(msgsToUse)
+    } else {
+      msgsToUse = messages
+    }
+    submit(msgsToUse, false)
   }
 
   const handleInputChange = (e: any) => {
@@ -158,7 +169,7 @@ export function useChatHelper({
   }
 
   return {
-    messages,
+    messages: messages ?? [],
     input,
     handleInputChange,
     isLoading,
@@ -167,12 +178,3 @@ export function useChatHelper({
     handleStop
   }
 }
-
-const mapMessagesToAiMessagse = (messages: MessageEntity[]): AiMessage[] => messages.map(msg => {
-  return {
-    id: msg.message_id.toString(),
-    content: msg.content,
-    role: msg.role as "assistant" | "system" | "user",
-    createdAt: msg.created_at
-  }
-})
