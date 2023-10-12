@@ -1,27 +1,15 @@
 'use client'
 
-import { UseChatHelpers } from "ai/react"
-
 import { Button } from "@/components/ui/button"
 import Textarea from 'react-textarea-autosize'
-import { Ban, Loader2, Octagon, RefreshCw, SendHorizonal } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useEnterSubmit } from "@/hooks/useEnterSubmit"
-import { MessageEntity } from "@/lib/entities"
+import { UseChatHelpers } from "@/hooks/useChatHelper"
+import { Ban, Loader2, RefreshCw, SendHorizonal } from "lucide-react"
 
-interface PromptInputProps extends Pick<
-  UseChatHelpers,
-  'handleSubmit'
-  | 'handleInputChange'
-  | 'input'
-  | 'isLoading'
-  | 'stop'
-> {
-  messages: MessageEntity[];
-  reload: () => void;
-}
+interface PromptInputProps extends UseChatHelpers { }
 
-export default function PromptInput({ isLoading, messages, stop, reload, input, handleInputChange, handleSubmit }: PromptInputProps) {
+export default function PromptInput({ isLoading, messages, handleStop, handleReload, input, handleInputChange, handleSubmit }: PromptInputProps) {
   const { formRef, onKeyDown } = useEnterSubmit()
 
   return (
@@ -34,7 +22,7 @@ export default function PromptInput({ isLoading, messages, stop, reload, input, 
               <Button
                 variant='outline'
                 className="flex gap-2"
-                onClick={() => stop()}
+                onClick={() => handleStop()}
               >
                 <Ban size={16} />
                 Stop generating
@@ -44,7 +32,7 @@ export default function PromptInput({ isLoading, messages, stop, reload, input, 
               <Button
                 variant='outline'
                 className="flex gap-2"
-                onClick={() => reload()}
+                onClick={() => handleReload()}
               >
                 <RefreshCw size={16} />
                 Regenerate

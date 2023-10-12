@@ -51,8 +51,14 @@ export interface MessageSource {
   embedding_id: number,
   similarity: number,
   content: string;
-  file_name: string,
-  folder_name: string
+  file: {
+    id: number;
+    name: string,
+  },
+  folder: {
+    id: number;
+    name: string,
+  },
 }
 
 export interface MessageEntity {

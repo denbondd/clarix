@@ -36,9 +36,11 @@ export async function getParsedMessages(prisma: PrismaClient, userId: string | n
               content: true,
               files: {
                 select: {
+                  file_id: true,
                   name: true,
                   folders: {
                     select: {
+                      folder_id: true,
                       name: true
                     }
                   }
@@ -65,8 +67,14 @@ export async function getParsedMessages(prisma: PrismaClient, userId: string | n
           embedding_id: s.embedding_id,
           similarity: s.similarity,
           content: s.embeddings.content,
-          file_name: s.embeddings.files.name,
-          folder_name: s.embeddings.files.folders.name
+          file: {
+            id: s.embeddings.files.file_id,
+            name: s.embeddings.files.name,
+          },
+          folder: {
+            id: s.embeddings.files.folders.folder_id,
+            name: s.embeddings.files.folders.name
+          }
         }
       })
     }

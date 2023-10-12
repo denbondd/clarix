@@ -1,6 +1,5 @@
-import { FullChatEntity, MessageEntity } from "@/lib/entities";
-import { useChat as useAiChat, Message as AiMessage } from "ai/react";
-import { MutableRefObject, useCallback, useEffect, useRef, useState } from "react";
+import { MessageEntity } from "@/lib/entities";
+import { MutableRefObject, useEffect, useRef, useState } from "react";
 import { useChats } from "./data/useChats";
 import useSWR, { KeyedMutator } from 'swr'
 
