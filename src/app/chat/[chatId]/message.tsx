@@ -6,6 +6,8 @@ import Image from "next/image"
 import { LogoIcon } from "@/components/ui/icons/icons"
 import { FileText } from "lucide-react"
 import Link from "next/link"
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 export default function Message({ msg, user, pathname }: { user?: UserResource | null, msg: MessageEntity, pathname: string }) {
   const fileIds = new Set(msg.msg_sources.map(s => s.file.id))
@@ -36,7 +38,14 @@ export default function Message({ msg, user, pathname }: { user?: UserResource |
               </div>
             }
           </div>
-          {msg.content}
+          <div>
+            <ReactMarkdown 
+              className='markdown-body'
+              rehypePlugins={[remarkGfm]}
+            >
+              {msg.content}
+            </ReactMarkdown>
+          </div>
         </div>
         {msg.msg_sources && msg.msg_sources.length > 0 && (
           <div>

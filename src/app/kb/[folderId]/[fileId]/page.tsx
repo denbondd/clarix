@@ -76,7 +76,7 @@ export default function File({ params }: { params: { fileId: string } }) {
         <Card className="w-full">
           <ScrollArea className="max-w-[70rem] h-[calc(100vh-150px)] rounded-md">
             <WithLoading error={fileContentErr} data={fileContent}>
-              <CardContent className="p-4">
+              <CardContent className="p-4 whitespace-pre-line">
                 {fileContent}
               </CardContent>
             </WithLoading>

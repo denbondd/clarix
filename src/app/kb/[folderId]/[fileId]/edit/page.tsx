@@ -157,7 +157,7 @@ export default function EditFile({ params }: { params: { folderId: string, fileI
                         File content
                       </FormLabel>
                       <FormControl>
-                        <Textarea placeholder='File content' {...field} />
+                        <Textarea className="h-[calc(100vh-250px)]" placeholder='File content' {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
