@@ -81,7 +81,7 @@ export default function KbLayout(props: { children: React.ReactNode }) {
 
   return (
     <div className="flex w-full h-full">
-      <Sidebar className='max-w-xs'>
+      <Sidebar>
         <div className="flex w-full gap-1 items-center mb-4">
           <Input
             placeholder="Search folder"

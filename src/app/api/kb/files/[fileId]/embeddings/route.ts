@@ -23,13 +23,15 @@ export async function PUT(req: NextRequest, { params }: { params: { fileId: stri
   const fileId = Number.parseInt(params.fileId)
 
   const splitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 200,
+    chunkSize: 300,
     chunkOverlap: 40,
   })
 
-
   const { userId } = auth()
   const file = await prisma.files.findFirst({
+    include: {
+      embeddings: true
+    },
     where: {
       file_id: fileId,
       folders: {
@@ -40,18 +42,33 @@ export async function PUT(req: NextRequest, { params }: { params: { fileId: stri
 
   if (!file) return new NextResponse(null, { status: 404 })
 
-  const embContents = await splitter.splitText(file.content)
+  const newContents = await splitter.splitText(file.content)
+  const existingContents = file.embeddings.map(e => e.content)
 
-  await vectorStore.addModels(
-    await prisma.$transaction(
-      embContents.map(c => prisma.embeddings.create({
-        data: {
-          content: c,
-          file_id: fileId,
-        }
-      }))
-    )
+  // insert only embeddings with unique content in case when user changes only part of file content
+  const contentsToInsert = newContents.filter(nc => !existingContents.includes(nc))
+  const newEmbeddings = await prisma.$transaction(
+    contentsToInsert.map(cont => prisma.embeddings.create({
+      data: {
+        content: cont,
+        file_id: file.file_id
+      }
+    }))
   )
+  // new file embeddings is all embeddings that are about new content
+  const fileEmbeddings = file.embeddings.filter(em => newContents.includes(em.content))
+    .concat(newEmbeddings)
+
+  // populate new embeddings with vectors and then (if success) delete embeddings that are not about new content
+  await vectorStore.addModels(newEmbeddings)
+    .then(() => prisma.embeddings.deleteMany({
+      where: {
+        file_id: file.file_id,
+        embedding_id: {
+          notIn: fileEmbeddings.map(fe => fe.embedding_id)
+        }
+      }
+    }))
 
   return new NextResponse(null, { status: 204 })
 }

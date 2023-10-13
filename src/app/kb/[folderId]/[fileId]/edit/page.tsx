@@ -51,7 +51,7 @@ export default function EditFile({ params }: { params: { folderId: string, fileI
 
   const handleSaveLearnFile = async (values: z.infer<typeof editDocSchema>) => {
     setIsSaveLoading(true)
-    updateFile({
+    await updateFile({
       prevFile: file,
       prevContent: origContent,
       content: values.content,
