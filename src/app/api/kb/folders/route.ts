@@ -1,10 +1,9 @@
+import { getServerSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
-  const { userId } = auth()
-
+  const userId = await getServerSessionUserId()
   const allUserFolders = await prisma.folders.findMany({
     select: {
       folder_id: true,
@@ -23,7 +22,7 @@ export async function GET() {
     },
     where: {
       user_id: {
-        equals: userId as string
+        equals: userId
       }
     },
     orderBy: {
@@ -35,7 +34,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = auth()
+  const userId = await getServerSessionUserId()
   const body: {
     name: string
   } = await req.json()
@@ -43,7 +42,7 @@ export async function POST(req: NextRequest) {
   const newFolder = await prisma.folders.create({
     data: {
       name: body.name,
-      user_id: userId as string
+      user_id: userId
     }
   })
 

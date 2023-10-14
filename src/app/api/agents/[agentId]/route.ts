@@ -1,10 +1,9 @@
+import { getServerSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function PUT(req: NextRequest, { params }: { params: { agentId: string } }) {
-  const { userId } = auth()
-
+  const userId = await getServerSessionUserId()
   const agentId = Number.parseInt(params.agentId)
   const body = (await req.json()) as {
     name: string;
@@ -23,7 +22,7 @@ export async function PUT(req: NextRequest, { params }: { params: { agentId: str
     }),
     prisma.agents.update({
       where: {
-        user_id: userId as string,
+        user_id: userId,
         agent_id: agentId
       },
       data: {

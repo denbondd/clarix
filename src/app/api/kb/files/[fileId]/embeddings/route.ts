@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { PrismaVectorStore } from "langchain/vectorstores/prisma";
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import { auth } from "@clerk/nextjs";
+import { getServerSessionUserId } from "@/lib/auth";
 
 const vectorStore = PrismaVectorStore.withModel<embeddings>(prisma).create(new OpenAIEmbeddings(), {
   prisma: Prisma,
@@ -27,7 +27,7 @@ export async function PUT(req: NextRequest, { params }: { params: { fileId: stri
     chunkOverlap: 40,
   })
 
-  const { userId } = auth()
+  const userId = await getServerSessionUserId()
   const file = await prisma.files.findFirst({
     include: {
       embeddings: true
@@ -35,7 +35,7 @@ export async function PUT(req: NextRequest, { params }: { params: { fileId: stri
     where: {
       file_id: fileId,
       folders: {
-        user_id: userId as string
+        user_id: userId
       }
     }
   })

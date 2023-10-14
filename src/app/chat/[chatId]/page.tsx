@@ -2,7 +2,6 @@
 
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useEffect, useRef, useState } from "react"
-import { useUser } from "@clerk/nextjs"
 import WithLoading from "@/components/with-loading"
 import { useChats } from "@/hooks/data/useChats"
 import PromptInput from "./prompt-input"
@@ -21,7 +20,6 @@ import { MessageEntity, MessageSource } from "@/lib/entities"
 export default function Chat({ params }: { params: { chatId: string } }) {
   const chatId = Number.parseInt(params.chatId)
 
-  const { user } = useUser()
   const { messages, handleReload, handleStop, handleSubmit, isLoading, handleInputChange, input } = useChatHelper({
     basePath: '/api/chat',
     chatId: chatId,
@@ -67,9 +65,9 @@ export default function Chat({ params }: { params: { chatId: string } }) {
   return (
     <div className="relative flex h-full flex-col flex-flow">
       <ScrollArea className="h-[calc(100vh-200px)]">
-        <WithLoading data={messages && user} isLoading={messages.length === 0} error={fetchMessagesError}>
+        <WithLoading data={messages} error={fetchMessagesError}>
           {messages.map(msg => (
-            <Message key={msg.message_id} msg={msg} user={user} pathname={pathname} />
+            <Message key={msg.message_id} msg={msg} />
           ))}
           <div ref={bottomRef} />
         </WithLoading>
@@ -98,7 +96,7 @@ export default function Chat({ params }: { params: { chatId: string } }) {
           <div className="grid grid-cols-3 gap-2">
             <div className="flex flex-col gap-2">
               {contextData?.msg?.msg_sources.map(s => (
-                <Link href={pathname + '?' + new URLSearchParams([['msg', contextData?.msg?.message_id.toString() ?? ''], ['src', s.embedding_id.toString()]])}>
+                <Link href={pathname + '?' + new URLSearchParams([['msg', contextData?.msg?.message_id.toString() ?? ''], ['src', s.embedding_id.toString()]])} key={s.embedding_id}>
                   <Card className={"relative rounded-sm overflow-hidden py-2 px-4" + (contextData?.src?.embedding_id === s.embedding_id ? ' ring-2 ring-ring ring-offset-1 ring-opacity-50' : '')}>
                     <Progress value={s.similarity * 100} className="rounded-none w-full h-full absolute z-0 left-0 top-0" />
                     <div className="z-10 relative flex justify-between items-center">

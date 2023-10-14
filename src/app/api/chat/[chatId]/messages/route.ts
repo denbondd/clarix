@@ -1,12 +1,11 @@
+import { getServerSessionUserId } from "@/lib/auth"
 import { MessageEntity } from "@/lib/entities"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@clerk/nextjs"
 import { PrismaClient } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(req: NextRequest, { params }: { params: { chatId: string } }) {
-  const { userId } = auth()
-
+  const userId = await getServerSessionUserId()
   const chatId = Number.parseInt(params.chatId)
 
   const parsedMessages = await getParsedMessages(prisma, userId, chatId)
@@ -14,11 +13,11 @@ export async function GET(req: NextRequest, { params }: { params: { chatId: stri
   return NextResponse.json(parsedMessages)
 }
 
-export async function getParsedMessages(prisma: PrismaClient, userId: string | null, chatId: number): Promise<MessageEntity[]> {
+export async function getParsedMessages(prisma: PrismaClient, userId: number, chatId: number): Promise<MessageEntity[]> {
   const messages = await prisma.messages.findMany({
     where: {
       chats: {
-        user_id: userId as string,
+        user_id: userId,
       },
       chat_id: chatId
     },

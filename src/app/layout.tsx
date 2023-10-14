@@ -1,12 +1,14 @@
+'use client'
+
 import './markdown.css'
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import { ClerkProvider } from '@clerk/nextjs'
 import Toolbar from './toolbar'
 import { Toaster } from '@/components/ui/toaster'
 import { ThemeProvider } from '@/components/theme-provider'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { SessionProvider } from "next-auth/react"
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -21,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
+    <SessionProvider>
       <html lang="en">
         <body className={inter.className}>
           <ThemeProvider
@@ -44,6 +46,6 @@ export default function RootLayout({
           </ThemeProvider>
         </body>
       </html>
-    </ClerkProvider>
+    </SessionProvider>
   )
 }

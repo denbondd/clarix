@@ -1,9 +1,9 @@
+import { getServerSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest, { params }: { params: { folderId: string } }) {
-  const { userId } = auth()
+  const userId = await getServerSessionUserId()
   const folderId = Number.parseInt(params.folderId)
 
   const folder = await prisma.folders.findFirst({
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: { folderId: st
     },
     where: {
       folder_id: folderId,
-      user_id: userId as string
+      user_id: userId
     },
   })
 
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest, { params }: { params: { folderId: st
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { folderId: string } }) {
-  const { userId } = auth()
+  const userId = await getServerSessionUserId()
   const folderId = Number.parseInt(params.folderId)
   const body: {
     name: string
@@ -49,7 +49,7 @@ export async function PUT(req: NextRequest, { params }: { params: { folderId: st
   const newFolder = await prisma.folders.update({
     where: {
       folder_id: folderId,
-      user_id: userId as string
+      user_id: userId
     },
     data: {
       name: body.name,
@@ -60,13 +60,13 @@ export async function PUT(req: NextRequest, { params }: { params: { folderId: st
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { folderId: string } }) {
-  const { userId } = auth()
+  const userId = await getServerSessionUserId()
   const folderId = Number.parseInt(params.folderId)
 
   await prisma.folders.delete({
     where: {
       folder_id: folderId,
-      user_id: userId as string
+      user_id: userId
     }
   })
 

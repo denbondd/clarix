@@ -7,18 +7,52 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Account {
+  id                Int       @id @default(autoincrement()) @map("account_id")
+  userId            Int       @map("user_id")
+  created_at        DateTime? @default(now()) @db.Timestamp(6)
+  type              String
+  provider          String
+  providerAccountId String    @map("provider_account_id")
+  refresh_token     String?
+  access_token      String?
+  expires_at        BigInt?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model User {
+  id            Int       @id @default(autoincrement()) @map("user_id")
+  name          String?   @db.VarChar(255)
+  email         String?   @unique @db.VarChar(255)
+  emailVerified DateTime? @db.Timestamptz(6)
+  image         String?
+  accounts      Account[]
+  agents        agents[]
+  chats         chats[]
+  folders       folders[]
+
+  @@map("users")
+}
+
 model agent_has_folders {
   agent_id  Int
   folder_id Int
-  agents    agents  @relation(fields: [agent_id], references: [agent_id], onDelete: NoAction, onUpdate: NoAction)
-  folders   folders @relation(fields: [folder_id], references: [folder_id], onDelete: NoAction, onUpdate: NoAction)
+  agents    agents  @relation(fields: [agent_id], references: [agent_id], onDelete: Cascade, onUpdate: NoAction)
+  folders   folders @relation(fields: [folder_id], references: [folder_id], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([agent_id, folder_id])
 }
 
 model agents {
   agent_id          Int                 @id @default(autoincrement())
-  user_id           String              @db.VarChar(32)
+  user_id           Int
   name              String              @db.VarChar(255)
   description       String?             @db.VarChar(255)
   created_on        DateTime            @default(now()) @db.Timestamptz(6)
@@ -27,6 +61,7 @@ model agents {
   temperature       Int
   agent_has_folders agent_has_folders[]
   models            models              @relation(fields: [model_id], references: [model_id], onDelete: NoAction, onUpdate: NoAction)
+  users             User                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   chats             chats[]
 
   @@unique([user_id, name])
@@ -34,10 +69,11 @@ model agents {
 
 model chats {
   chat_id  Int        @id @default(autoincrement())
-  user_id  String     @db.VarChar(32)
+  user_id  Int
   name     String     @db.VarChar(255)
   agent_id Int
   agents   agents     @relation(fields: [agent_id], references: [agent_id], onDelete: NoAction, onUpdate: NoAction)
+  users    User       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   messages messages[]
 
   @@unique([user_id, name])
@@ -45,10 +81,10 @@ model chats {
 
 model embeddings {
   embedding_id Int                    @id @default(autoincrement())
-  content      String                 @db.VarChar(255)
+  content      String
   embedding    Unsupported("vector")?
   file_id      Int
-  files        files                  @relation(fields: [file_id], references: [file_id], onDelete: NoAction, onUpdate: NoAction)
+  files        files                  @relation(fields: [file_id], references: [file_id], onDelete: Cascade, onUpdate: NoAction)
   msg_sources  msg_sources[]
 }
 
@@ -58,9 +94,9 @@ model files {
   folder_id  Int
   created_at DateTime     @default(now()) @db.Timestamptz(6)
   edited_at  DateTime     @default(now()) @db.Timestamptz(6)
-  content    String       @db.Text
+  content    String
   embeddings embeddings[]
-  folders    folders      @relation(fields: [folder_id], references: [folder_id], onDelete: NoAction, onUpdate: NoAction)
+  folders    folders      @relation(fields: [folder_id], references: [folder_id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([folder_id, name])
 }
@@ -68,10 +104,11 @@ model files {
 model folders {
   folder_id         Int                 @id @default(autoincrement())
   name              String              @db.VarChar(255)
-  user_id           String              @db.VarChar(32)
+  user_id           Int
   created_at        DateTime            @default(now()) @db.Timestamptz(6)
   agent_has_folders agent_has_folders[]
   files             files[]
+  users             User                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([user_id, name])
 }
@@ -81,7 +118,7 @@ model messages {
   chat_id     Int
   role_id     Int
   created_at  DateTime      @default(now()) @db.Timestamptz(6)
-  content     String        @db.Text
+  content     String
   chats       chats         @relation(fields: [chat_id], references: [chat_id], onDelete: NoAction, onUpdate: NoAction)
   msg_roles   msg_roles     @relation(fields: [role_id], references: [msg_role_id], onDelete: NoAction, onUpdate: NoAction)
   msg_sources msg_sources[]
@@ -98,8 +135,8 @@ model msg_sources {
   message_id   Int
   embedding_id Int
   similarity   Float
-  embeddings   embeddings @relation(fields: [embedding_id], references: [embedding_id], onDelete: NoAction, onUpdate: NoAction)
-  messages     messages   @relation(fields: [message_id], references: [message_id], onDelete: NoAction, onUpdate: NoAction)
+  embeddings   embeddings @relation(fields: [embedding_id], references: [embedding_id], onDelete: Cascade, onUpdate: NoAction)
+  messages     messages   @relation(fields: [message_id], references: [message_id], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([message_id, embedding_id])
 }

@@ -1,10 +1,9 @@
+import { getServerSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
-  const { userId } = auth()
-
+  const userId = await getServerSessionUserId()
   const agents = await prisma.agents.findMany({
     select: {
       agent_id: true,
@@ -18,7 +17,7 @@ export async function GET() {
       agent_has_folders: true
     },
     where: {
-      user_id: userId as string
+      user_id: userId
     }
   })
 
@@ -26,8 +25,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = auth()
-
+  const userId  = await getServerSessionUserId()
   const body = (await req.json()) as {
     name: string;
     folderIds: number[];
@@ -39,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   const newAgent = await prisma.agents.create({
     data: {
-      user_id: userId as string,
+      user_id: userId,
       name: body.name,
       description: body.description,
       model_id: body.modelId,

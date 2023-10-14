@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 
 import { PromptTemplate } from "langchain/prompts"
@@ -8,6 +7,7 @@ import OpenAI from 'openai';
 import { OpenAIStream, StreamingTextResponse } from 'ai';
 import { getParsedMessages } from "./messages/route";
 import { MessageEntity } from "@/lib/entities";
+import { getServerSessionUserId } from "@/lib/auth";
 
 const prompt = PromptTemplate.fromTemplate(
   `Context:
@@ -17,14 +17,14 @@ const prompt = PromptTemplate.fromTemplate(
 )
 
 export async function POST(req: NextRequest, { params }: { params: { chatId: string } }) {
-  const { userId } = auth()
+  const userId = await getServerSessionUserId()
   const chatId = Number.parseInt(params.chatId)
 
   const providedMessages: MessageEntity[] = (await req.json()).messages ?? []
 
   const chat = await prisma.chats.findFirst({
     where: {
-      user_id: userId as string,
+      user_id: userId,
       chat_id: chatId
     },
     select: {
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: { chatId: str
   })
   const agent = await prisma.agents.findFirst({
     where: {
-      user_id: userId as string,
+      user_id: userId,
       agent_id: chat?.agent_id
     },
     select: {
