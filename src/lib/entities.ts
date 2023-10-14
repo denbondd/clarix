@@ -27,7 +27,7 @@ export interface AgentEntity {
   name: string;
   description?: string;
   temperature: number;
-  created_on: Date;
+  created_on: string;
   system_prompt: string;
   agent_id: number;
   user_id: string;

@@ -16,6 +16,7 @@ import { useState } from "react"
 import { useAgents } from "@/hooks/data/useAgents"
 import { useModels } from "@/hooks/data/useModels"
 import { useFolders } from "@/hooks/data/useFolders"
+import { parseDateStr } from "@/lib/utils"
 
 export default function Agents() {
   const allAgents = useAgents((state) => state.agents)
@@ -79,7 +80,7 @@ export default function Agents() {
                 </CardContent>
                 <CardFooter className="justify-center flex-col">
                   <div className="text-center text-muted-foreground text-sm my-2">
-                    Created On: {ag.created_on.toString()}
+                    Created On: {parseDateStr(ag.created_on, {day: 'numeric', month: 'short', year: 'numeric'})}
                   </div>
                   <DialogTrigger asChild>
                     <Button onClick={() => setEditAgentObj(ag)}>

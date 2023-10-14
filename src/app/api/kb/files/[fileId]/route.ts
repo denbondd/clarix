@@ -37,6 +37,13 @@ export async function PUT(req: NextRequest, { params }: { params: { fileId: stri
       name: newData?.name,
       content: newData?.content,
       folder_id: newData?.folderId
+    },
+    include: {
+      _count: {
+        select: {
+          embeddings: true
+        }
+      }
     }
   })
 
