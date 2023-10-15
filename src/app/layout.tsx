@@ -1,16 +1,10 @@
 import "./markdown.css"
 import "./globals.css"
-import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import Toolbar from "./toolbar"
 import Providers from "./providers"
 
 const inter = Inter({ subsets: ["latin"] })
-
-export const metadata: Metadata = {
-  title: "Clarix | AI knows your staff.",
-  description: "Clarix - the best)",
-}
 
 export default function RootLayout({
   children,
