@@ -68,7 +68,3 @@ export interface MessageEntity {
   role: 'user' | 'assistant' | 'system',
   msg_sources: MessageSource[]
 }
-
-export interface FullChatEntity extends ChatEntity {
-  messages: MessageEntity[];
-}

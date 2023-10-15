@@ -21,15 +21,15 @@ export default function FolderElem({
 }: {
   params: { folderId: string }
 }) {
-  const folder = useFolders(state => state.folders)?.find(
-    v => v.folder_id.toString() === params.folderId
-  )
-  const foldersError = useFolders(state => state.foldersError)
+  const folderId = Number.parseInt(params.folderId)
+
+  const { folders, isLoading, error } = useFolders()
+  const folder = folders?.find(f => f.folder_id === folderId)
 
   const [openAnyMenu, setOpenAnyMenu] = useState(false)
 
   return (
-    <WithLoading data={folder} error={foldersError}>
+    <WithLoading data={folder} isLoading={isLoading} error={error}>
       <ScrollArea className="max-h-[calc(100vh-60px)] w-full flex-1">
         {folder && (
           <div className="m-2 flex flex-col gap-4">

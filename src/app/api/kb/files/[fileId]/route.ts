@@ -54,7 +54,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { fileId: s
   const userId = await getServerSessionUserId()
   const fileId = Number.parseInt(params.fileId)
 
-  prisma.files.delete({
+  await prisma.files.delete({
     where: {
       file_id: fileId,
       folders: {

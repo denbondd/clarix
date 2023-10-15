@@ -1,19 +1,17 @@
-import { ModelEntity } from "@/lib/entities";
-import { create } from "zustand";
-import { fetchStateData } from "./common";
+import { ModelEntity } from "@/lib/entities"
+import { fetcher } from "./common"
+import useSWR from "swr"
 
-interface ModelsState {
-  models: ModelEntity[] | undefined,
-  modelsError: boolean
+export const useModels = () => {
+  const {
+    data: models,
+    isLoading,
+    error,
+  } = useSWR<ModelEntity[]>("/api/models", fetcher)
+
+  return {
+    models,
+    isLoading,
+    error,
+  }
 }
-
-export const useModels = create<ModelsState>(() => ({
-  models: undefined,
-  modelsError: false
-}))
-
-fetchStateData(
-  '/models',
-  data => useModels.setState({ models: data }),
-  error => useModels.setState({ modelsError: error })
-)()

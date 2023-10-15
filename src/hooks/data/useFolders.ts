@@ -1,40 +1,18 @@
-import { FileEntity, FolderEntity } from "@/lib/entities"
-import { create } from "zustand"
-import { fetchStateData } from "./common"
+import useSWR from "swr"
+import { fetcher } from "./common"
 import { backendFetch } from "@/utils/backendFetch"
+import { FileEntity, FolderEntity } from "@/lib/entities"
 
-interface FoldersState {
-  folders: FolderEntity[] | undefined
-  foldersError: boolean
-  createFolder: (folderName: string) => Promise<number>
-  deleteFolder: (folderId: number) => Promise<void>
-  renameFolder: (folderId: number, newName: string) => Promise<void>
-  createFile: (
-    data: {
-      content: string
-      fileName: string
-      folderId: number
-    },
-    onCreatedNotLearned: () => void
-  ) => Promise<void>
-  updateFile: (
-    data: {
-      prevFile: FileEntity | undefined
-      prevContent: string
-      content: string
-      fileName: string
-    },
-    onCreatedNotLearned: () => void
-  ) => Promise<void>
-  deleteFile: (fileId: number) => Promise<void>
-  changeFolder: (fileId: number, newFoldId: number) => Promise<void>
-}
+export const useFolders = () => {
+  const {
+    data: folders,
+    isLoading,
+    error,
+    mutate,
+  } = useSWR<FolderEntity[]>("/api/kb/folders", fetcher)
 
-export const useFolders = create<FoldersState>((set, get) => ({
-  folders: undefined,
-  foldersError: false,
-  createFolder: folderName => {
-    return backendFetch("/kb/folders", {
+  const createFolder = async (folderName: string) => {
+    return backendFetch("/api/kb/folders", {
       method: "POST",
       body: JSON.stringify({ name: folderName }),
     })
@@ -42,39 +20,57 @@ export const useFolders = create<FoldersState>((set, get) => ({
       .then(json => {
         const newFold = json as FolderEntity
         newFold.files = []
-        set({ folders: get().folders?.concat(newFold) })
+        mutate(folders?.concat(newFold))
         return newFold.folder_id
       })
-  },
-  deleteFolder: folderId => {
-    return backendFetch("/kb/folders/" + folderId, {
+  }
+
+  const deleteFolder = async (folderId: number) => {
+    return backendFetch("/api/kb/folders/" + folderId, {
       method: "DELETE",
-    }).then(_ =>
-      set({
-        folders: get().folders?.filter(fold => fold.folder_id !== folderId),
-      })
-    )
-  },
-  renameFolder: (folderId, newName) => {
-    return backendFetch("/kb/folders/" + folderId, {
+    }).then(_ => mutate(folders?.filter(fold => fold.folder_id !== folderId)))
+  }
+
+  const renameFolder = async (folderId: number, newName: string) => {
+    return backendFetch("/api/kb/folders/" + folderId, {
       method: "PUT",
       body: JSON.stringify({
         name: newName,
       }),
     }).then(_ => {
-      const newFold = get().folders?.find(
+      const newFold = folders?.find(
         fold => fold.folder_id === folderId
       ) as FolderEntity
       newFold.name = newName
-      set({
-        folders: get().folders?.map(fold =>
-          fold.folder_id !== folderId ? fold : newFold
-        ),
-      })
+      mutate(
+        folders?.map(fold => (fold.folder_id !== folderId ? fold : newFold))
+      )
     })
-  },
-  createFile: (data, onCreatedNotLearned) => {
-    return backendFetch("/kb/files", {
+  }
+
+  const changeFolder = async (fileId: number, newFolderId: number) => {
+    return backendFetch("/api/kb/files/" + fileId, {
+      method: "PUT",
+      body: JSON.stringify({
+        folderId: newFolderId,
+      }),
+    })
+      .then(res => res.json())
+      .then(json => {
+        mutate(deleteFileInFoldersArray(folders, fileId))
+        mutate(appendFileToFoldersArray(folders, json))
+      })
+  }
+
+  const createFile = async (
+    data: {
+      content: string
+      fileName: string
+      folderId: number
+    },
+    onCreatedNotLearned: () => void
+  ) => {
+    return backendFetch("/api/kb/files", {
       method: "POST",
       body: JSON.stringify({
         name: data.fileName,
@@ -84,18 +80,27 @@ export const useFolders = create<FoldersState>((set, get) => ({
     })
       .then(res => res.json())
       .then(json => {
-        const newFile = json as FileEntity
         onCreatedNotLearned()
-        set({ folders: appendFileToFolder(get().folders, newFile) })
-        return backendFetch("/kb/files/" + newFile.file_id + "/embeddings", {
+        mutate(appendFileToFoldersArray(folders, json))
+        return backendFetch("/api/kb/files/" + json.file_id + "/embeddings", {
           method: "PUT",
-        }).then(_ => {
-          newFile._count.embeddings = 1
-          set({ folders: replaceFileInFolder(get().folders, newFile) })
         })
+          .then(res => res.json())
+          .then(json => {
+            mutate(replaceFileInFoldersArray(folders, json))
+          })
       })
-  },
-  updateFile: (data, onCreatedNotLearned) => {
+  }
+
+  const updateFile = async (
+    data: {
+      prevFile: FileEntity | undefined
+      prevContent: string
+      content: string
+      fileName: string
+    },
+    onCreatedNotLearned: () => void
+  ) => {
     if (
       data.prevFile?.name !== data.fileName ||
       data.prevContent !== data.content
@@ -125,67 +130,62 @@ export const useFolders = create<FoldersState>((set, get) => ({
         .then(_ => {
           const newFile = data.prevFile as FileEntity
           newFile.name = data.fileName
-          set({ folders: replaceFileInFolder(get().folders, newFile) })
+          mutate(replaceFileInFoldersArray(folders, newFile))
         })
     } else {
       return Promise.resolve()
     }
-  },
-  deleteFile: fileId => {
-    return backendFetch("/kb/files/" + fileId, {
+  }
+
+  const deleteFile = async (fileId: number) => {
+    return backendFetch("/api/kb/files/" + fileId, {
       method: "DELETE",
     }).then(_ => {
-      set({ folders: deleteFileInFolder(get().folders, fileId) })
+      mutate(deleteFileInFoldersArray(folders, fileId))
     })
-  },
-  changeFolder: (fileId, newFoldId) => {
-    return backendFetch("/kb/files/" + fileId, {
-      method: "PUT",
-      body: JSON.stringify({
-        folderId: newFoldId,
-      }),
-    })
-      .then(res => res.json())
-      .then(json => {
-        set({ folders: deleteFileInFolder(get().folders, fileId) })
-        set({ folders: appendFileToFolder(get().folders, json) })
-      })
-  },
-}))
+  }
 
-fetchStateData(
-  "/kb/folders",
-  data => useFolders.setState({ folders: data }),
-  error => useFolders.setState({ foldersError: error })
-)()
-
-export const fetchFileContent = (
-  fileId: string | number,
-  options?: any
-): Promise<{ content: string }> => {
-  return backendFetch(`/kb/files/ ${fileId}/content`, options)
-    .then(res => res.json())
-    .catch(err => {
-      console.error(err)
-      throw err
-    })
+  return {
+    folders,
+    isLoading,
+    error,
+    createFolder,
+    deleteFolder,
+    renameFolder,
+    changeFolder,
+    createFile,
+    updateFile,
+    deleteFile,
+  }
 }
 
-export const findFolderById = (
-  folders: FolderEntity[] | undefined,
-  folderId: number | undefined
-) => folders?.find(fold => fold.folder_id === folderId)
-
-export const findFileById = (
+const deleteFileInFoldersArray = (
   folders: FolderEntity[] | undefined,
   fileId: number
-) =>
-  folders
-    ?.map(fold => fold.files)
-    .flat()
-    .find(file => file.file_id === fileId)
-
-const replaceFileInFolder = (
+) => {
+  return folders?.map(fold => {
+    const newFold = fold
+    newFold.files = newFold.files.filter(file => file.file_id !== fileId)
+    return newFold
+  })
+}
+const appendFileToFoldersArray = (
+  folders: FolderEntity[] | undefined,
+  file: FileEntity
+) => {
+  return folders?.map(fold =>
+    fold.folder_id !== file.folder_id
+      ? fold
+      : {
+          name: fold.name,
+          created_at: fold.created_at,
+          folder_id: fold.folder_id,
+          user_id: fold.user_id,
+          files: fold.files.concat(file),
+        }
+  )
+}
+const replaceFileInFoldersArray = (
   folders: FolderEntity[] | undefined,
   file: FileEntity
 ) => {
@@ -203,29 +203,18 @@ const replaceFileInFolder = (
         }
   )
 }
-const appendFileToFolder = (
-  folders: FolderEntity[] | undefined,
-  file: FileEntity
-) => {
-  return folders?.map(fold =>
-    fold.folder_id !== file.folder_id
-      ? fold
-      : {
-          name: fold.name,
-          created_at: fold.created_at,
-          folder_id: fold.folder_id,
-          user_id: fold.user_id,
-          files: fold.files.concat(file),
-        }
+
+export const fetchFileContent = (
+  fileId: string | number,
+  options?: any
+): Promise<{ content: string }> => {
+  return backendFetch(
+    `${process.env.NEXTAUTH_URL}/api/kb/files/${fileId}/content`,
+    options
   )
-}
-const deleteFileInFolder = (
-  folders: FolderEntity[] | undefined,
-  fileId: number
-) => {
-  return folders?.map(fold => {
-    const newFold = fold
-    newFold.files = newFold.files.filter(file => file.file_id !== fileId)
-    return newFold
-  })
+    .then(res => res.json())
+    .catch(err => {
+      console.error(err)
+      throw err
+    })
 }

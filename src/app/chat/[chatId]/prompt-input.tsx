@@ -1,15 +1,37 @@
-'use client'
+"use client"
 
 import { Button } from "@/components/ui/button"
-import Textarea from 'react-textarea-autosize'
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import Textarea from "react-textarea-autosize"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { useEnterSubmit } from "@/hooks/useEnterSubmit"
-import { UseChatHelpers } from "@/hooks/useChatHelper"
 import { Ban, Loader2, RefreshCw, SendHorizonal } from "lucide-react"
+import { UseMessagesHelpers } from "@/hooks/data/useMessages"
 
-interface PromptInputProps extends UseChatHelpers { }
+interface PromptInputProps
+  extends Pick<
+    UseMessagesHelpers,
+    | "isLoading"
+    | "messages"
+    | "stop"
+    | "reload"
+    | "input"
+    | "handleInputChange"
+    | "handleSubmit"
+  > {}
 
-export default function PromptInput({ isLoading, messages, handleStop, handleReload, input, handleInputChange, handleSubmit }: PromptInputProps) {
+export default function PromptInput({
+  isLoading,
+  messages,
+  stop,
+  reload,
+  input,
+  handleInputChange,
+  handleSubmit,
+}: PromptInputProps) {
   const { formRef, onKeyDown } = useEnterSubmit()
 
   return (
@@ -20,9 +42,9 @@ export default function PromptInput({ isLoading, messages, handleStop, handleRel
             <div />
             {isLoading && (
               <Button
-                variant='outline'
+                variant="outline"
                 className="flex gap-2"
-                onClick={() => handleStop()}
+                onClick={() => stop()}
               >
                 <Ban size={16} />
                 Stop generating
@@ -30,9 +52,9 @@ export default function PromptInput({ isLoading, messages, handleStop, handleRel
             )}
             {!isLoading && messages.length > 0 && (
               <Button
-                variant='outline'
+                variant="outline"
                 className="flex gap-2"
-                onClick={() => handleReload()}
+                onClick={() => reload()}
               >
                 <RefreshCw size={16} />
                 Regenerate
@@ -60,11 +82,13 @@ export default function PromptInput({ isLoading, messages, handleStop, handleRel
                 <span tabIndex={0}>
                   <Button
                     type="submit"
-                    size='icon'
+                    size="icon"
                     disabled={isLoading || input.length === 0}
                     className="transition duration-200 my-2"
                   >
-                    {isLoading && <Loader2 size={20} className="animate-spin" />}
+                    {isLoading && (
+                      <Loader2 size={20} className="animate-spin" />
+                    )}
                     {!isLoading && <SendHorizonal size={20} />}
                   </Button>
                 </span>

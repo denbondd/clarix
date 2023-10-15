@@ -126,7 +126,7 @@ export async function POST(req: NextRequest, { params }: { params: { chatId: str
     messages: messages,
     model: agent.models.tech_name,
     stream: true
-  });console.log(messages)
+  })
 
   const stream = OpenAIStream(response, {
     async onCompletion(completion) {

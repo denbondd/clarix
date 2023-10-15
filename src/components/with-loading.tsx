@@ -23,7 +23,7 @@ export default function WithLoading(props: WithLoadingProps) {
     </div>
   )
   if (props.data) return (
-    <div>
+    <div className={props.className ?? '' + " w-full h-full"}>
       {props.children}
     </div>
   )

@@ -38,9 +38,7 @@ export default function FileRow(props: { file: FileEntity }) {
   const [isChangeFolderLoading, setIsChangeFolderLoading] = useState(false)
   const [enteredFId, setEnteredFId] = useState("")
 
-  const allFolders = useFolders(state => state.folders)
-  const deleteFile = useFolders(state => state.deleteFile)
-  const changeFolder = useFolders(state => state.changeFolder)
+  const {folders, deleteFile, changeFolder} = useFolders()
 
   const handleDeleteFile = (): Promise<void> => {
     return deleteFile(props.file.file_id)
@@ -174,7 +172,7 @@ export default function FileRow(props: { file: FileEntity }) {
             noFoundText="No folder found"
             placeholder="Search folder..."
             elements={
-              allFolders?.map(f => {
+              folders?.map(f => {
                 return {
                   label: f.name,
                   value: f.folder_id.toString(),

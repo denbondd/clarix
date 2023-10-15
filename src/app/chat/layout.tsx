@@ -1,81 +1,90 @@
-'use client'
+"use client"
 
-import { LoadingButton } from "@/components/loading-button";
-import Sidebar from "@/components/sidebar";
-import { Button } from "@/components/ui/button";
-import { Combobox } from "@/components/ui/combobox";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { generalErrorToast } from "@/components/ui/use-toast";
-import WithLoading from "@/components/with-loading";
-import { useAgents } from "@/hooks/data/useAgents";
-import { useChats } from "@/hooks/data/useChats";
+import { LoadingButton } from "@/components/loading-button"
+import Sidebar from "@/components/sidebar"
+import { Button } from "@/components/ui/button"
+import { Combobox } from "@/components/ui/combobox"
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { generalErrorToast } from "@/components/ui/use-toast"
+import WithLoading from "@/components/with-loading"
+import { useAgents } from "@/hooks/data/useAgents"
+import { useChats } from "@/hooks/data/useChats"
+import { useSearch } from "@/hooks/useSearch"
 
-import { ChatEntity } from "@/lib/entities";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { MessageSquarePlus } from "lucide-react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import * as z from 'zod'
+import { ChatEntity } from "@/lib/entities"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { MessageSquarePlus } from "lucide-react"
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
 
 export default function ChatLayout(props: { children: React.ReactNode }) {
-  const allChats = useChats((state) => state.chats)
-  const chatsError = useChats((state) => state.chatsError)
-  const createChat = useChats((state) => state.createChat)
-
-  const agents = useAgents((state) => state.agents)
+  const { chats, isLoading, error, createChat } = useChats()
+  const { agents } = useAgents()
 
   const router = useRouter()
 
   const path = usePathname()
   const [currentChatId, setCurrentChatId] = useState(-1)
   useEffect(() => {
-    const pathParts = path.split('/')
+    const pathParts = path.split("/")
     setCurrentChatId(pathParts.length == 2 ? -1 : Number.parseInt(pathParts[2]))
   }, [path])
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
-  const [searchChatName, setSearchChatName] = useState('')
-  const [chats, setChats] = useState<ChatEntity[]>()
+  const [isAddBtnLoading, setIsAddBtnLoading] = useState(false)
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 
-  useEffect(() => {
-    if (!searchChatName)
-      setChats(allChats)
-    else
-      setChats(allChats?.filter(c => c.name.toLowerCase().includes(searchChatName.toLowerCase())))
-  }, [allChats, searchChatName])
+  const {
+    filteredData: filteredChats,
+    handleSearchInputChange,
+    searchInput,
+  } = useSearch(chats)
 
   const handleChatCreate = (values: z.infer<typeof createChatSchema>) => {
-    setIsLoading(true)
+    setIsAddBtnLoading(true)
     createChat(values)
       .then(newChatId => {
-        setIsOpen(false)
-        router.push('/chat/' + newChatId)
+        setIsAddDialogOpen(false)
+        router.push("/chat/" + newChatId)
       })
-      .catch(err => { generalErrorToast() })
-      .finally(() => setIsLoading(false))
+      .catch(_ => {
+        generalErrorToast()
+      })
+      .finally(() => setIsAddBtnLoading(false))
   }
 
   const createChatSchema = z.object({
-    name: z.string({ required_error: 'Folder name is required' })
-      .min(3, { message: 'Folder name must me at least 3 characters' })
-      .max(60, { message: 'Too long for a folder name, try something shorter' })
-      .refine(
-        name => !chats?.find(f => f.name == name),
-        { message: 'Chat with this name already exists' }
-      ),
-    agentId: z.number({ required_error: 'Agent is required' })
+    name: z
+      .string({ required_error: "Folder name is required" })
+      .min(3, { message: "Folder name must me at least 3 characters" })
+      .max(60, { message: "Too long for a folder name, try something shorter" })
+      .refine(name => !chats?.find(f => f.name == name), {
+        message: "Chat with this name already exists",
+      }),
+    agentId: z.number({ required_error: "Agent is required" }),
   })
 
   const form = useForm<z.infer<typeof createChatSchema>>({
     resolver: zodResolver(createChatSchema),
   })
-
-  const chatId = usePathname().split('/').pop()
 
   return (
     <div className="flex w-full h-full">
@@ -83,34 +92,33 @@ export default function ChatLayout(props: { children: React.ReactNode }) {
         <div className="flex w-full gap-1 items-center mb-4">
           <Input
             placeholder="Search chat"
-            value={searchChatName}
-            onChange={(inp) => setSearchChatName(inp.target.value)}
+            value={searchInput}
+            onChange={handleSearchInputChange}
           />
 
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button size='icon' className="flex-none">
+              <Button size="icon" className="flex-none">
                 <MessageSquarePlus size={22} />
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>
-                  Create Chat
-                </DialogTitle>
+                <DialogTitle>Create Chat</DialogTitle>
               </DialogHeader>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleChatCreate)} id="createFolderForm">
+                <form
+                  onSubmit={form.handleSubmit(handleChatCreate)}
+                  id="createFolderForm"
+                >
                   <FormField
                     control={form.control}
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>
-                          Chat name
-                        </FormLabel>
+                        <FormLabel>Chat name</FormLabel>
                         <FormControl>
-                          <Input placeholder='Chat name' {...field} />
+                          <Input placeholder="Chat name" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -121,22 +129,24 @@ export default function ChatLayout(props: { children: React.ReactNode }) {
                     name="agentId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>
-                          Agent
-                        </FormLabel>
+                        <FormLabel>Agent</FormLabel>
                         <FormControl>
                           <div>
                             <Combobox
                               btnTriggerText="Select Agent"
-                              elements={agents?.map(ag => {
-                                return {
-                                  value: ag.agent_id.toString(),
-                                  label: ag.name
-                                }
-                              }) ?? []}
+                              elements={
+                                agents?.map(ag => {
+                                  return {
+                                    value: ag.agent_id.toString(),
+                                    label: ag.name,
+                                  }
+                                }) ?? []
+                              }
                               noFoundText="No Agent found"
                               value={field.value?.toString()}
-                              onValueChange={v => form.setValue('agentId', Number.parseInt(v))}
+                              onValueChange={v =>
+                                form.setValue("agentId", Number.parseInt(v))
+                              }
                               placeholder="Select Agent"
                             />
                           </div>
@@ -149,52 +159,46 @@ export default function ChatLayout(props: { children: React.ReactNode }) {
               </Form>
               <DialogFooter className="mt-4">
                 <DialogTrigger asChild>
-                  <Button variant='secondary' >
-                    Cancel
-                  </Button>
+                  <Button variant="secondary">Cancel</Button>
                 </DialogTrigger>
-                <LoadingButton isLoading={isLoading} type="submit" form="createFolderForm">
+                <LoadingButton
+                  isLoading={isAddBtnLoading}
+                  type="submit"
+                  form="createFolderForm"
+                >
                   Create
                 </LoadingButton>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
-        <WithLoading data={allChats} error={chatsError}>
+        <WithLoading data={chats} isLoading={isLoading} error={error}>
           <div className="flex flex-col gap-2">
-            {chats?.map((c, idx) => (
+            {filteredChats?.map((c, idx) => (
               <Chat chat={c} key={idx} currentChatId={currentChatId} />
             ))}
           </div>
         </WithLoading>
       </Sidebar>
-      <div className="w-full mx-auto">
-        {props.children}
-      </div>
+      <div className="w-full mx-auto">{props.children}</div>
     </div>
   )
 }
 
-function Chat({ chat, currentChatId }: { chat: ChatEntity, currentChatId: number }) {
+function Chat({
+  chat,
+  currentChatId,
+}: {
+  chat: ChatEntity
+  currentChatId: number
+}) {
   return (
-    <Button 
-      asChild 
-      variant={chat.chat_id === currentChatId ? 'secondary' : 'outline'}
+    <Button
+      asChild
+      variant={chat.chat_id === currentChatId ? "secondary" : "outline"}
       className="justify-between"
     >
-      {/* <div> */}
       <Link href={`/chat/${chat.chat_id}`}>{chat.name}</Link>
-      {/* <Dialog>
-          <DialogTrigger asChild>
-            <Button variant='outline'>
-              <Settings />
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-
-          </DialogContent>
-        </Dialog>
-      </div> */}
     </Button>
   )
 }

@@ -64,7 +64,7 @@ export default function EditAgentDialogContent(props: EditAgentDialogContentProp
     if (agent)
       form.reset({
         name: agent.name,
-        description: agent.description,
+        description: agent.description ?? '',
         folderIds: agent.agent_has_folders.map(v => v.folder_id),
         modelId: agent.models.model_id,
         systemPrompt: agent.system_prompt,
@@ -91,7 +91,8 @@ export default function EditAgentDialogContent(props: EditAgentDialogContentProp
     resolver: zodResolver(agentSchema),
     defaultValues: {
       temperature: defaultValues.temperature,
-      systemPrompt: defaultValues.systemPrompt
+      systemPrompt: defaultValues.systemPrompt,
+      description: ''
     }
   })
 

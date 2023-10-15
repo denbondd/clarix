@@ -1,4 +1,5 @@
 import { backendFetch } from "@/utils/backendFetch"
+import { Fetcher } from "swr"
 
 export const fetchStateData = (
   path: string,
@@ -10,10 +11,14 @@ export const fetchStateData = (
       .then(res => res.json())
       .then(json => setSuccess(json))
       .catch(err => {
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           setError(true)
           console.error(err)
         }
       })
   }
 }
+
+export const fetcher = (
+  ...args: [input: RequestInfo | URL, init?: RequestInit | undefined]
+) => fetch(...args).then(res => res.json())
