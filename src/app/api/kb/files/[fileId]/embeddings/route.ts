@@ -60,7 +60,7 @@ export async function PUT(req: NextRequest, { params }: { params: { fileId: stri
     .concat(newEmbeddings)
 
   // populate new embeddings with vectors and then (if success) delete embeddings that are not about new content
-  await vectorStore.addModels(newEmbeddings)
+  vectorStore.addModels(newEmbeddings)
     .then(() => prisma.embeddings.deleteMany({
       where: {
         file_id: file.file_id,

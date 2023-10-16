@@ -30,7 +30,7 @@ export default function FolderElem({
 
   return (
     <WithLoading data={folder} isLoading={isLoading} error={error}>
-      <ScrollArea className="max-h-[calc(100vh-60px)] w-full flex-1">
+      <ScrollArea className="h-[calc(100vh-60px)] w-full flex-1">
         {folder && (
           <div className="m-2 flex flex-col gap-4">
             <FolderHeader

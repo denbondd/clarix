@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { MoreVertical } from "lucide-react"
+import { Loader2, MoreVertical } from "lucide-react"
 import { FileEntity } from "@/lib/entities"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -75,6 +75,7 @@ export default function FileRow(props: { file: FileEntity }) {
   const getStatusBadge = (embeddingsCount: number) => {
     return (
       <Badge variant={embeddingsCount > 0 ? "success" : "default"}>
+        {embeddingsCount > 0 ? <></> : <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
         {embeddingsCount > 0 ? "Learned" : "New"}
       </Badge>
     )
@@ -130,11 +131,9 @@ export default function FileRow(props: { file: FileEntity }) {
               >
                 Edit
               </DropdownMenuItem>
-              {/* <DialogTrigger asChild> */}
               <DropdownMenuItem onClick={() => setOpenChangeFolder(true)}>
                 Change folder
               </DropdownMenuItem>
-              {/* </DialogTrigger> */}
 
               <DropdownMenuSeparator />
               <ConfirmDialog

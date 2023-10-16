@@ -79,7 +79,7 @@ The project is self-hosted only, we might enable cloud hosting later if there wi
 To run the project, you will the following env variables:
 
 - URL string to connect to database. Project configured for PostgreSQL, but you can easily change it to any SQL database or MongoDB (was not tested with other databases). Prisma docs about database connectors: [..link..](https://www.prisma.io/docs/concepts/database-connectors)
-- OpenAI API Key. You can change or add another providers in the code ([src/app/api/kb/files/[fileId]/embeddings/route.ts](/blob/master/src/app/api/kb/files/%5BfileId%5D/embeddings/route.ts) and [src/app/api/chat/[chatId]/route.ts](/blob/master/src/app/api/chat/%5BchatId%5D/route.ts) files)
+- OpenAI API Key. You can change or add another providers in the code ([src/app/api/kb/files/[fileId]/embeddings/route.ts](/src/app/api/kb/files/%5BfileId%5D/embeddings/route.ts) and [src/app/api/chat/[chatId]/route.ts](/src/app/api/chat/%5BchatId%5D/route.ts) files)
 - OAuth secrets for Auth.js. Project configured for GitHub OAuth, but you can easily change to any other OAuth provider. email or credentials auth. Auth.js docs on providers: [..link..](https://next-auth.js.org/providers/)
   
 ### Local Installation
@@ -136,7 +136,7 @@ Don't forget to give the project a star! Thanks again!
 5. Open a Pull Request
 
 ## License
-Source code in this repository is made available under the [MPL-2.0 License](/blob/main/LICENSE).
+Source code in this repository is made available under the [MPL-2.0 License](/LICENSE).
 
 ## Contact
 Denys Bondarenko - [@denbondd](https://twitter.com/denbondd) - [denbon04@gmail.com](mailto:denbon04@gmail.com)

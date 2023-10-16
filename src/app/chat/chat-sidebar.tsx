@@ -61,9 +61,9 @@ export default function ChatSidebar() {
   const handleChatCreate = (values: z.infer<typeof createChatSchema>) => {
     setIsAddBtnLoading(true)
     createChat(values)
-      .then(newChatId => {
+      .then(newChat => {
         setIsAddDialogOpen(false)
-        router.push("/chat/" + newChatId)
+        router.push("/chat/" + newChat.chat_id)
       })
       .catch(_ => {
         generalErrorToast()

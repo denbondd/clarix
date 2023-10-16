@@ -11,7 +11,10 @@ export const useChats = () => {
     mutate,
   } = useSWR<ChatEntity[]>("/api/chat", fetcher)
 
-  const createChat = async (chatData: { name: string; agentId: number }) => {
+  const createChat = async (chatData: {
+    name: string
+    agentId: number
+  }): Promise<ChatEntity> => {
     return backendFetch("/api/chat", {
       method: "POST",
       body: JSON.stringify(chatData),
@@ -19,6 +22,7 @@ export const useChats = () => {
       .then(res => res.json())
       .then(json => {
         mutate([json, ...(chats ?? [])])
+        return json
       })
   }
 
@@ -26,6 +30,6 @@ export const useChats = () => {
     chats,
     isLoading,
     error,
-    createChat
+    createChat,
   }
 }

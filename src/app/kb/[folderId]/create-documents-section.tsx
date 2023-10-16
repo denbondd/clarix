@@ -66,7 +66,10 @@ export default function CreateDocumentsSection(
         })
     )
       .then(_ => setOpenDialog(false))
-      .catch(_ => generalErrorToast())
+      .catch(e => {
+        console.error(e)
+        generalErrorToast()
+      })
       .finally(() => setIsLoading(false))
   }
 

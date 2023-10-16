@@ -80,14 +80,14 @@ export const useFolders = () => {
     })
       .then(res => res.json())
       .then(json => {
+        const newFile = json as FileEntity
         onCreatedNotLearned()
-        mutate(appendFileToFoldersArray(folders, json))
-        return backendFetch("/api/kb/files/" + json.file_id + "/embeddings", {
+        mutate(appendFileToFoldersArray(folders, newFile))
+        return backendFetch("/api/kb/files/" + newFile.file_id + "/embeddings", {
           method: "PUT",
         })
-          .then(res => res.json())
-          .then(json => {
-            mutate(replaceFileInFoldersArray(folders, json))
+          .then(_ => {
+            mutate(replaceFileInFoldersArray(folders, newFile))
           })
       })
   }
