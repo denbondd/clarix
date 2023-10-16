@@ -69,6 +69,7 @@ CREATE TABLE models (
   name VARCHAR(255) NOT NULL,
   tech_name VARCHAR(50) NOT NULL
 );
+INSERT INTO models (name, tech_name) VALUES ('Chat GPT 3.5-turbo', 'gpt-3.5-turbo'), ('Chat GPT 4', 'gpt-4');
 
 CREATE TABLE agents (
   agent_id SERIAL PRIMARY KEY NOT NULL,
@@ -103,6 +104,7 @@ CREATE TABLE msg_roles (
   msg_role_id SERIAL PRIMARY KEY NOT NULL,
   name VARCHAR(12) NOT NULL
 );
+INSERT INTO msg_roles (name) VALUES ('system'), ('user'), ('assistant');
 
 CREATE TABLE messages (
   message_id SERIAL PRIMARY KEY NOT NULL,

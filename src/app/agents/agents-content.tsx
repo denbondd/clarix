@@ -53,69 +53,71 @@ export default function AgentsContent() {
 
   return (
     <WithLoading data={agents} isLoading={isLoading} error={error}>
-      <div className="max-w-7xl w-full mx-auto my-2 flex flex-col gap-2">
-        <div className="flex gap-3 justify-between items-center">
-          <div className="font-semibold tracking-tight text-2xl">Agents</div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus />
-                Add Agent
-              </Button>
-            </DialogTrigger>
+      <div className="mx-2">
+        <div className="max-w-7xl w-full mx-auto my-2 flex flex-col gap-2">
+          <div className="flex gap-3 justify-between items-center">
+            <div className="font-semibold tracking-tight text-2xl">Agents</div>
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus />
+                  Add Agent
+                </Button>
+              </DialogTrigger>
+              <EditAgentDialogContent
+                type="create"
+                folders={folders}
+                models={models}
+                tookNames={agents?.map(a => a.name) ?? []}
+                onSubmit={handleCreateAgent}
+              />
+            </Dialog>
+          </div>
+          <Separator />
+          <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+            <div className="flex gap-2 flex-wrap align-middle justify-center lg:justify-start">
+              {agents?.map((ag, idx) => (
+                <Card
+                  key={idx}
+                  className="flex-1 min-w-[18rem] max-w-md flex flex-col justify-between"
+                >
+                  <CardHeader className="text-center">
+                    <CardTitle>{ag.name}</CardTitle>
+                    <Badge className="w-max mx-auto">{ag.models.name}</Badge>
+                  </CardHeader>
+                  <CardContent>{ag.description}</CardContent>
+                  <CardFooter className="justify-center flex-col">
+                    <div className="text-center text-muted-foreground text-sm my-2">
+                      Created On:{" "}
+                      {parseDateStr(ag.created_on, {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </div>
+                    <DialogTrigger asChild>
+                      <Button onClick={() => setEditAgentObj(ag)}>Edit</Button>
+                    </DialogTrigger>
+                  </CardFooter>
+                </Card>
+              ))}
+              {(!agents || agents.length === 0) && (
+                <div className="text-lg text-center text-muted-foreground w-full mt-4">
+                  You have no Agents yet. Tap Add Agent to create one
+                </div>
+              )}
+            </div>
             <EditAgentDialogContent
-              type="create"
+              type="edit"
+              agent={editAgentObj}
               folders={folders}
               models={models}
               tookNames={agents?.map(a => a.name) ?? []}
-              onSubmit={handleCreateAgent}
+              onSubmit={handleEditAgent}
             />
           </Dialog>
         </div>
-        <Separator />
-        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-          <div className="flex gap-2 flex-wrap align-middle justify-center lg:justify-start">
-            {agents?.map((ag, idx) => (
-              <Card
-                key={idx}
-                className="flex-1 min-w-[18rem] max-w-md flex flex-col justify-between"
-              >
-                <CardHeader className="text-center">
-                  <CardTitle>{ag.name}</CardTitle>
-                  <Badge className="w-max mx-auto">{ag.models.name}</Badge>
-                </CardHeader>
-                <CardContent>{ag.description}</CardContent>
-                <CardFooter className="justify-center flex-col">
-                  <div className="text-center text-muted-foreground text-sm my-2">
-                    Created On:{" "}
-                    {parseDateStr(ag.created_on, {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </div>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => setEditAgentObj(ag)}>Edit</Button>
-                  </DialogTrigger>
-                </CardFooter>
-              </Card>
-            ))}
-            {(!agents || agents.length === 0) && (
-              <div className="text-lg text-center text-muted-foreground w-full mt-4">
-                You have no Agents yet. Tap Add Agent to create one
-              </div>
-            )}
-          </div>
-          <EditAgentDialogContent
-            type="edit"
-            agent={editAgentObj}
-            folders={folders}
-            models={models}
-            tookNames={agents?.map(a => a.name) ?? []}
-            onSubmit={handleEditAgent}
-          />
-        </Dialog>
       </div>
-    </WithLoading>    
+    </WithLoading>
   )
 }
